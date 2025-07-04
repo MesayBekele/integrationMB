@@ -45,7 +45,7 @@ beforeEach(() => {
 
 // After each test
 afterEach(() => {
-  // Take screenshot on failure
+  // Take screenshot on failure (mochawesome will automatically include it)
   if (Cypress.currentTest.state === 'failed') {
     const testName = Cypress.currentTest.title.replace(/\s+/g, '-').toLowerCase();
     cy.takeScreenshot(`failed-${testName}`);
@@ -56,8 +56,9 @@ afterEach(() => {
 Cypress.config('defaultCommandTimeout', configManager.getTimeout());
 
 // Log framework information
-console.log('🚀 Simple E2E Framework Initialized');
+console.log('🚀 Simple E2E Framework Initialized (Mochawesome Reporting)');
 console.log(`📍 Environment: ${configManager.getCurrentEnvironment()}`);
 console.log(`🌐 Base URL: ${configManager.getBaseUrl()}`);
 console.log(`⏱️ Timeout: ${configManager.getTimeout()}ms`);
+console.log(`📊 Reporter: Mochawesome (Direct Integration)`);
 

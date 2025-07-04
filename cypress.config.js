@@ -35,14 +35,21 @@ module.exports = defineConfig({
       tags: '@smoke'
     },
     
-    // Reporter configuration for better reporting
+    // Mochawesome reporter configuration - simplified and direct
     reporter: 'cypress-mochawesome-reporter',
     reporterOptions: {
       reportDir: 'reports/temp',
       overwrite: false,
-      html: false,
+      html: true,
       json: true,
-      timestamp: 'mmddyyyy_HHMMss'
+      timestamp: 'mmddyyyy_HHMMss',
+      reportTitle: 'E2E Test Report',
+      reportPageTitle: 'Cypress E2E Tests',
+      embeddedScreenshots: true,
+      inlineAssets: true,
+      saveAllAttempts: false,
+      ignoreVideos: false,
+      videoOnFailOnly: false
     },
     
     async setupNodeEvents(on, config) {
