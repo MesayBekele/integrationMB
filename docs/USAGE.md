@@ -1,25 +1,12 @@
-# E2E Automation Framework Usage Guide
+# 📖 Simple E2E Framework Usage Guide
 
-This guide covers how to use the E2E automation framework effectively for writing, organizing, and executing tests.
-
-## 📚 Table of Contents
-
-1. [Writing Tests](#writing-tests)
-2. [Test Organization](#test-organization)
-3. [Using Tags](#using-tags)
-4. [Data-Driven Testing](#data-driven-testing)
-5. [Page Object Model](#page-object-model)
-6. [API Testing](#api-testing)
-7. [Database Testing](#database-testing)
-8. [Running Tests](#running-tests)
-9. [Reporting](#reporting)
-10. [Best Practices](#best-practices)
+This guide covers how to use the simple E2E automation framework effectively.
 
 ## 🧪 Writing Tests
 
-### Feature Files
+### Feature Files (Gherkin Syntax)
 
-Feature files use Gherkin syntax and are located in `cypress/e2e/features/`. Here's the basic structure:
+Feature files use Gherkin syntax and are located in `cypress/e2e/features/`:
 
 ```gherkin
 @smoke @ui @login
@@ -32,16 +19,23 @@ Feature: User Login
     Given I am on the login page
 
   @critical @smoke
-  Scenario: Successful login with valid credentials
-    When I enter valid admin credentials
+  Scenario: Successful login
+    When I enter valid user credentials
     And I click the login button
     Then I should be redirected to the dashboard
     And I should see a welcome message
+
+  @regression @ui
+  Scenario: Failed login with invalid credentials
+    When I enter username "invalid"
+    And I enter password "wrong"
+    And I click the login button
+    Then I should see an error message "Invalid credentials"
 ```
 
 ### Step Definitions
 
-Step definitions are JavaScript functions that implement the Gherkin steps:
+Step definitions implement the Gherkin steps in JavaScript:
 
 ```javascript
 import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
@@ -50,33 +44,44 @@ Given('I am on the login page', () => {
   cy.visit('/login');
 });
 
-When('I enter valid admin credentials', () => {
-  const user = configManager.getUser('admin');
-  cy.get('[data-cy="username"]').type(user.username);
-  cy.get('[data-cy="password"]').type(user.password);
+When('I enter valid user credentials', () => {
+  cy.loginAs('user');
+});
+
+When('I enter username {string}', (username) => {
+  cy.get('[data-cy="username"]').type(username);
 });
 
 Then('I should be redirected to the dashboard', () => {
-  cy.url().should('include', '/dashboard');
+  cy.shouldBeOnPage('/dashboard');
 });
 ```
 
-### Custom Commands
+## 🏷️ Using Tags
 
-Use custom commands for reusable functionality:
+### Tag Categories
 
-```javascript
-// In cypress/support/commands.js
-Cypress.Commands.add('loginAs', (userType) => {
-  const user = configManager.getUser(userType);
-  cy.visit('/login');
-  cy.get('[data-cy="username"]').type(user.username);
-  cy.get('[data-cy="password"]').type(user.password);
-  cy.get('[data-cy="login-button"]').click();
-});
+- **@smoke** - Quick smoke tests
+- **@regression** - Full regression tests
+- **@ui** - UI-focused tests
+- **@critical** - Critical functionality tests
+- **@mobile** - Mobile-specific tests
 
-// In your test
-cy.loginAs('admin');
+### Running Tagged Tests
+
+```bash
+# Run smoke tests
+npm run test:smoke
+
+# Run regression tests
+npm run test:regression
+
+# Run UI tests
+npm run test:ui
+
+# Custom tag combinations
+node scripts/run-tagged-tests.js --tags "@smoke and @ui"
+node scripts/run-tagged-tests.js --tags "@regression and not @mobile"
 ```
 
 ## 🗂️ Test Organization
@@ -87,17 +92,12 @@ cy.loginAs('admin');
 cypress/e2e/features/
 ├── auth/
 │   ├── login.feature
-│   ├── logout.feature
-│   └── password-reset.feature
-├── user-management/
-│   ├── user-creation.feature
-│   └── user-profile.feature
-├── api/
-│   ├── user-api.feature
-│   └── product-api.feature
+│   └── logout.feature
+├── navigation/
+│   ├── menu.feature
+│   └── breadcrumbs.feature
 └── examples/
-    ├── login.feature
-    └── api-tests.feature
+    └── login.feature
 ```
 
 ### Naming Conventions
@@ -105,144 +105,6 @@ cypress/e2e/features/
 - **Feature files**: Use kebab-case (e.g., `user-login.feature`)
 - **Step definition files**: Use snake_case (e.g., `login_steps.js`)
 - **Page objects**: Use PascalCase (e.g., `LoginPage.js`)
-- **Utilities**: Use camelCase (e.g., `apiHelper.js`)
-
-### Feature Organization
-
-Group related scenarios in the same feature file:
-
-```gherkin
-Feature: User Management
-  As an admin
-  I want to manage users
-  So that I can control system access
-
-  @smoke @admin
-  Scenario: Create new user
-    # Steps here
-
-  @regression @admin
-  Scenario: Update user information
-    # Steps here
-
-  @regression @admin
-  Scenario: Delete user
-    # Steps here
-```
-
-## 🏷️ Using Tags
-
-### Tag Categories
-
-The framework supports multiple tag categories:
-
-```gherkin
-@smoke @ui @critical @login
-Feature: Login Functionality
-
-@regression @api @medium @user-management
-Feature: User API
-
-@integration @database @high @orders
-Feature: Order Processing
-```
-
-### Tag Types
-
-- **Test Types**: `@smoke`, `@regression`, `@sanity`, `@integration`, `@e2e`
-- **Components**: `@ui`, `@api`, `@database`, `@mobile`, `@desktop`
-- **Priorities**: `@critical`, `@high`, `@medium`, `@low`
-- **Features**: `@login`, `@registration`, `@checkout`, `@payment`
-- **Status**: `@wip`, `@ready`, `@blocked`, `@skip`
-
-### Running Tagged Tests
-
-```bash
-# Run smoke tests
-npm run test:smoke
-
-# Run specific tags
-npm run cy:run -- --env tags="@smoke and @ui"
-
-# Exclude certain tags
-npm run cy:run -- --env tags="@regression and not @wip"
-
-# Complex tag expressions
-npm run cy:run -- --env tags="(@smoke or @sanity) and @ui"
-
-# Using the tag runner script
-node scripts/run-tagged-tests.js --tags "@critical" --env qa
-```
-
-## 📊 Data-Driven Testing
-
-### Scenario Outlines
-
-Use scenario outlines for data-driven tests:
-
-```gherkin
-@data-driven @regression
-Scenario Outline: Login with different user types
-  When I login as "<userType>" with credentials "<username>" and "<password>"
-  Then I should see the "<expectedPage>" page
-  And I should have "<accessLevel>" access permissions
-
-  Examples:
-    | userType | username | password    | expectedPage | accessLevel |
-    | admin    | admin    | Admin123!   | dashboard    | full        |
-    | user     | testuser | User123!    | profile      | limited     |
-    | manager  | manager  | Manager123! | reports      | moderate    |
-```
-
-### External Data Sources
-
-#### JSON Data Files
-
-```javascript
-// cypress/fixtures/testData/users.json
-{
-  "validUsers": [
-    {
-      "username": "admin",
-      "password": "Admin123!",
-      "role": "administrator"
-    },
-    {
-      "username": "user",
-      "password": "User123!",
-      "role": "user"
-    }
-  ]
-}
-
-// In step definitions
-cy.fixture('testData/users').then((data) => {
-  data.validUsers.forEach(user => {
-    // Use user data
-  });
-});
-```
-
-#### CSV Data Files
-
-```javascript
-// Load CSV data
-cy.task('readFile', 'cypress/fixtures/testData/users.csv').then((csvData) => {
-  const users = csvData.split('\n').map(line => line.split(','));
-  // Process CSV data
-});
-```
-
-#### Database Data
-
-```javascript
-// Load data from database
-cy.dbSelect('users', { active: true }).then((users) => {
-  users.forEach(user => {
-    // Use database user data
-  });
-});
-```
 
 ## 🏗️ Page Object Model
 
@@ -263,24 +125,28 @@ class LoginPage extends BasePage {
     };
   }
 
-  navigateToLogin() {
-    this.visit('/login');
+  visit() {
+    cy.visit('/login');
     return this;
   }
 
-  enterCredentials(username, password) {
-    this.typeText(this.elements.usernameInput, username);
-    this.typeText(this.elements.passwordInput, password);
+  enterUsername(username) {
+    cy.get(this.elements.usernameInput).type(username);
     return this;
   }
 
-  clickLogin() {
-    this.clickElement(this.elements.loginButton);
+  enterPassword(password) {
+    cy.get(this.elements.passwordInput).type(password);
+    return this;
+  }
+
+  clickLoginButton() {
+    cy.get(this.elements.loginButton).click();
     return this;
   }
 
   verifyErrorMessage(message) {
-    this.verifyElementText(this.elements.errorMessage, message);
+    cy.shouldContainText(this.elements.errorMessage, message);
     return this;
   }
 }
@@ -296,164 +162,77 @@ const LoginPage = require('../pages/LoginPage');
 const loginPage = new LoginPage();
 
 Given('I am on the login page', () => {
-  loginPage.navigateToLogin();
+  loginPage.visit();
 });
 
 When('I enter valid credentials', () => {
-  loginPage.enterCredentials('admin', 'password123');
-});
-
-When('I click the login button', () => {
-  loginPage.clickLogin();
-});
-```
-
-### Page Object Inheritance
-
-```javascript
-// BasePage.js - Common functionality
-class BasePage {
-  visit(url) {
-    cy.visit(url);
-    return this;
-  }
-
-  clickElement(selector) {
-    cy.get(selector).click();
-    return this;
-  }
-
-  typeText(selector, text) {
-    cy.get(selector).clear().type(text);
-    return this;
-  }
-}
-
-// Specific page extends BasePage
-class DashboardPage extends BasePage {
-  constructor() {
-    super();
-    this.elements = {
-      welcomeMessage: '[data-cy="welcome"]',
-      logoutButton: '[data-cy="logout"]'
-    };
-  }
-
-  verifyWelcomeMessage() {
-    cy.get(this.elements.welcomeMessage).should('be.visible');
-    return this;
-  }
-}
-```
-
-## 🔌 API Testing
-
-### Basic API Tests
-
-```javascript
-// In step definitions
-When('I make a GET request to {string}', (endpoint) => {
-  cy.apiGet(endpoint).as('apiResponse');
-});
-
-Then('the response status should be {int}', (expectedStatus) => {
-  cy.get('@apiResponse').then((response) => {
-    expect(response.status).to.equal(expectedStatus);
-  });
-});
-
-Then('the response should contain {string}', (expectedData) => {
-  cy.get('@apiResponse').then((response) => {
-    expect(response.body).to.include(expectedData);
-  });
+  loginPage
+    .enterUsername('user')
+    .enterPassword('password')
+    .clickLoginButton();
 });
 ```
 
-### API Authentication
+## 🛠️ Custom Commands
 
+The framework includes useful custom commands:
+
+### Login Commands
 ```javascript
-// Authenticate before API calls
-Given('I am authenticated as an admin', () => {
-  cy.apiLogin('admin').then((response) => {
-    expect(response.status).to.equal(200);
-    // Token is automatically stored in apiHelper
-  });
-});
-
-// Make authenticated requests
-When('I create a user via API', () => {
-  const userData = {
-    username: 'newuser',
-    email: 'newuser@example.com',
-    password: 'Password123!'
-  };
-  cy.apiPost('/users', userData).as('createUserResponse');
-});
+// Login as different user types
+cy.loginAs('admin');
+cy.loginAs('user');
 ```
 
-### API Response Validation
-
+### Navigation Commands
 ```javascript
-// Validate response structure
-Then('the response should have valid user structure', () => {
-  cy.get('@apiResponse').then((response) => {
-    expect(response.body).to.have.property('id');
-    expect(response.body).to.have.property('username');
-    expect(response.body).to.have.property('email');
-    expect(response.body).to.have.property('createdAt');
-    expect(response.body.email).to.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-  });
-});
-
-// Validate response time
-Then('the response time should be acceptable', () => {
-  cy.get('@apiResponse').then((response) => {
-    expect(response.duration).to.be.lessThan(2000); // 2 seconds
-  });
-});
+// Navigate to pages
+cy.navigateTo('dashboard');
+cy.shouldBeOnPage('/profile');
 ```
 
-## 🗄️ Database Testing
-
-### Database Operations
-
+### Form Commands
 ```javascript
-// Create test data
-Given('I have a test user in the database', () => {
-  cy.createTestUser({
-    username: 'testuser',
-    email: 'test@example.com'
-  }).as('testUser');
+// Fill forms easily
+cy.fillForm({
+  username: 'testuser',
+  email: 'test@example.com',
+  phone: '555-1234'
 });
 
-// Query database
-When('I check the user in the database', () => {
-  cy.get('@testUser').then((user) => {
-    cy.dbSelect('users', { id: user.id }).as('dbUser');
-  });
-});
-
-// Verify database state
-Then('the user should exist in the database', () => {
-  cy.get('@dbUser').then((users) => {
-    expect(users).to.have.length(1);
-    expect(users[0]).to.have.property('username', 'testuser');
-  });
-});
+cy.submitForm();
 ```
 
-### Database Cleanup
-
+### Assertion Commands
 ```javascript
-// Clean up after tests
-afterEach(() => {
-  cy.dbQuery('DELETE FROM users WHERE username LIKE "test%"');
+// Simple assertions
+cy.shouldBeVisible('[data-cy="welcome"]');
+cy.shouldContainText('[data-cy="message"]', 'Success');
+cy.shouldNotExist('[data-cy="error"]');
+```
+
+### Mobile Commands
+```javascript
+// Test mobile viewports
+cy.setMobileViewport('iphone-x');
+cy.setMobileViewport('ipad');
+```
+
+### Utility Commands
+```javascript
+// Take screenshots
+cy.takeScreenshot('login-page');
+
+// Clear storage
+cy.clearStorage();
+
+// Measure performance
+cy.measurePerformance(() => {
+  cy.get('[data-cy="submit"]').click();
 });
 
-// Or use helper methods
-afterEach(() => {
-  cy.task('cleanupTestData');
-});
+// Log steps for debugging
+cy.logStep('Entering user credentials');
 ```
 
 ## 🏃‍♂️ Running Tests
@@ -467,43 +246,47 @@ npm run cy:open
 # Headless mode
 npm run cy:run
 
-# Specific environment
+# Specific environments
 npm run test:dev
 npm run test:qa
 npm run test:uat
 
-# Specific browser
+# Specific browsers
 npm run cy:run:chrome
 npm run cy:run:firefox
+npm run cy:run:edge
 ```
 
 ### Command Line Options
 
 ```bash
 # Run with specific tags
-npx cypress run --env tags="@smoke"
+node scripts/run-tagged-tests.js --tags "@smoke"
 
-# Run specific spec file
-npx cypress run --spec "cypress/e2e/features/login.feature"
-
-# Run with custom environment
-npx cypress run --env environment=qa,tags="@regression"
-
-# Run in headed mode
-npx cypress run --headed
+# Run in specific environment
+node scripts/run-tagged-tests.js --tags "@ui" --env qa
 
 # Run with specific browser
-npx cypress run --browser firefox
+node scripts/run-tagged-tests.js --tags "@regression" --browser firefox
+
+# Run in headed mode
+node scripts/run-tagged-tests.js --tags "@smoke" --headed
+
+# Run specific feature file
+node scripts/run-tagged-tests.js --spec "cypress/e2e/features/auth/login.feature"
 ```
 
-### Parallel Execution
+### Advanced Examples
 
 ```bash
-# Using Cypress Dashboard
-npm run test:parallel
+# Smoke tests in QA with Firefox
+node scripts/run-tagged-tests.js --tags "@smoke" --env qa --browser firefox
 
-# Using custom parallel runner
-node scripts/run-tagged-tests.js --tags "@regression" --parallel
+# Critical tests in headed mode
+node scripts/run-tagged-tests.js --tags "@critical" --headed
+
+# UI tests excluding mobile
+node scripts/run-tagged-tests.js --tags "@ui and not @mobile"
 ```
 
 ## 📊 Reporting
@@ -511,40 +294,136 @@ node scripts/run-tagged-tests.js --tags "@regression" --parallel
 ### Generate Reports
 
 ```bash
-# Generate all report types
+# Generate HTML report
 npm run report:generate
 
-# Generate specific format
-node scripts/generate-reports.js --format html
-node scripts/generate-reports.js --format cucumber
-node scripts/generate-reports.js --format json
-
-# Merge multiple reports
-npm run report:merge
-```
-
-### View Reports
-
-```bash
-# Open HTML report
+# Open report in browser
 npm run report:open
-
-# Or manually open
-open reports/html/index.html
 ```
 
-### Custom Report Configuration
+### Report Features
 
-```javascript
-// In cypress.config.js
-module.exports = defineConfig({
-  e2e: {
-    reporter: 'cypress-multi-reporters',
-    reporterOptions: {
-      configFile: 'reporter-config.json'
+The HTML report includes:
+- ✅ Test execution summary
+- 📊 Pass/fail statistics
+- 🌍 Environment information
+- 🕒 Execution timestamps
+- 📱 Browser information
+- 📈 Success rate visualization
+
+### Report Location
+
+Reports are saved to:
+- `reports/html/index.html` - Main HTML report
+- `cypress/screenshots/` - Test screenshots
+- `cypress/videos/` - Test videos
+
+## 🔧 Configuration
+
+### Environment Configuration
+
+Update configuration files in `config/` directory:
+
+```json
+{
+  "baseUrl": "https://your-app.com",
+  "timeout": 10000,
+  "users": {
+    "admin": {
+      "username": "admin_user",
+      "password": "admin_pass"
+    },
+    "user": {
+      "username": "regular_user",
+      "password": "user_pass"
     }
   }
+}
+```
+
+### Using Configuration
+
+```javascript
+// In step definitions or page objects
+const configManager = require('../utilities/configManager');
+
+// Get user credentials
+const adminUser = configManager.getUser('admin');
+const regularUser = configManager.getUser('user');
+
+// Get base URL
+const baseUrl = configManager.getBaseUrl();
+
+// Get timeout
+const timeout = configManager.getTimeout();
+
+// Get any config value
+const customValue = configManager.get('custom.setting');
+```
+
+## 📱 Mobile Testing
+
+### Set Mobile Viewport
+
+```javascript
+// In step definitions
+Given('I am using a mobile device', () => {
+  cy.setMobileViewport('iphone-x');
 });
+
+// Available devices
+cy.setMobileViewport('iphone-x');    // 375x812
+cy.setMobileViewport('ipad');        // 768x1024
+cy.setMobileViewport('samsung-s10'); // 360x760
+```
+
+### Mobile-Specific Tests
+
+```gherkin
+@mobile @ui
+Feature: Mobile Navigation
+  As a mobile user
+  I want to navigate the app
+  So that I can access all features
+
+  @smoke
+  Scenario: Mobile menu functionality
+    Given I am using a mobile device
+    When I visit the home page
+    Then the mobile menu should be visible
+    When I tap the menu button
+    Then the navigation menu should expand
+```
+
+## 📝 Data-Driven Testing
+
+### Scenario Outlines
+
+```gherkin
+@data-driven @regression
+Scenario Outline: Login with different users
+  When I login with credentials "<username>" and "<password>"
+  Then I should see the "<expectedPage>" page
+
+  Examples:
+    | username | password  | expectedPage |
+    | admin    | admin123  | dashboard    |
+    | user     | user123   | profile      |
+    | manager  | mgr123    | reports      |
+```
+
+### Using Test Data
+
+```javascript
+// Generate test data
+const email = cy.generateTestData('email');
+const username = cy.generateTestData('username');
+const password = cy.generateTestData('password');
+
+// Use in tests
+cy.get('[data-cy="email"]').type(email);
+cy.get('[data-cy="username"]').type(username);
+cy.get('[data-cy="password"]').type(password);
 ```
 
 ## 🎯 Best Practices
@@ -594,12 +473,12 @@ module.exports = defineConfig({
    ```javascript
    // Good
    When('I enter valid credentials', () => {
-     loginPage.enterCredentials('admin', 'password');
+     loginPage.enterCredentials('user', 'password');
    });
    
    // Bad
    When('I enter valid credentials', () => {
-     cy.get('[data-cy="username"]').type('admin');
+     cy.get('[data-cy="username"]').type('user');
      cy.get('[data-cy="password"]').type('password');
    });
    ```
@@ -615,94 +494,115 @@ module.exports = defineConfig({
    const user = { username: 'admin', password: 'hardcoded' };
    ```
 
-2. **Clean up test data**
-   ```javascript
-   afterEach(() => {
-     cy.cleanupTestData();
-   });
-   ```
-
-### Error Handling
-
-1. **Use proper assertions**
-   ```javascript
-   // Good
-   cy.get('[data-cy="error"]').should('contain.text', 'Invalid credentials');
+2. **Use data-cy attributes**
+   ```html
+   <!-- Good -->
+   <button data-cy="login-button">Login</button>
    
-   // Bad
-   cy.get('[data-cy="error"]').should('be.visible');
+   <!-- Bad -->
+   <button class="btn btn-primary">Login</button>
    ```
 
-2. **Handle async operations**
+## 🔍 Debugging
+
+### Debug Commands
+
+```javascript
+// Add debug points
+cy.debug();
+
+// Log information
+cy.logStep('Entering login credentials');
+
+// Take screenshots
+cy.takeScreenshot('before-login');
+
+// Pause execution
+cy.pause();
+```
+
+### Debug Mode
+
+```bash
+# Run with debug output
+DEBUG=cypress:* npm run cy:run
+
+# Run specific debug categories
+DEBUG=cypress:server:* npm run cy:run
+```
+
+### Common Debugging Techniques
+
+1. **Use cy.log() for debugging**
    ```javascript
-   // Good
-   cy.intercept('POST', '/api/login').as('loginRequest');
-   cy.get('[data-cy="login-button"]').click();
-   cy.wait('@loginRequest');
-   
-   // Bad
-   cy.get('[data-cy="login-button"]').click();
-   cy.wait(2000); // Arbitrary wait
+   cy.log('Current URL:', window.location.href);
    ```
 
-## 🔧 Advanced Usage
+2. **Check element existence**
+   ```javascript
+   cy.get('[data-cy="element"]').should('exist');
+   ```
 
-### Custom Cypress Commands
+3. **Wait for elements**
+   ```javascript
+   cy.waitForElement('[data-cy="loading"]');
+   ```
 
-```javascript
-// cypress/support/commands.js
-Cypress.Commands.add('dragAndDrop', (sourceSelector, targetSelector) => {
-  cy.get(sourceSelector).trigger('mousedown', { button: 0 });
-  cy.get(targetSelector).trigger('mousemove').trigger('mouseup');
-});
+## 🔄 CI/CD Integration
 
-// Usage
-cy.dragAndDrop('[data-cy="item"]', '[data-cy="dropzone"]');
+### Jenkins Pipeline
+
+The framework includes a Jenkins pipeline with parameters:
+
+- **Environment**: dev, qa, uat
+- **Browser**: chrome, firefox, edge
+- **Tags**: Test tags to execute
+- **Headless Mode**: Run in headless mode
+
+### Pipeline Features
+
+- ✅ Parameterized builds
+- 📊 Automatic report generation
+- 📁 Artifact archival
+- 🔄 Clean workspace
+
+### Running in CI/CD
+
+```bash
+# Example Jenkins build command
+npx cypress run --browser chrome --env environment=qa,tags='@smoke'
 ```
 
-### Environment-Specific Configuration
+## 🆘 Troubleshooting
 
+### Common Issues
+
+**Tests not finding elements:**
 ```javascript
-// cypress.config.js
-module.exports = defineConfig({
-  e2e: {
-    setupNodeEvents(on, config) {
-      const environment = config.env.environment || 'dev';
-      const envConfig = require(`./config/${environment}.json`);
-      
-      config.baseUrl = envConfig.baseUrl;
-      config.env = { ...config.env, ...envConfig };
-      
-      return config;
-    }
-  }
-});
+// Use proper waits
+cy.waitForElement('[data-cy="element"]');
+
+// Check element visibility
+cy.shouldBeVisible('[data-cy="element"]');
 ```
 
-### Plugin Integration
-
+**Configuration not loading:**
 ```javascript
-// cypress.config.js
-const { addCucumberPreprocessorPlugin } = require('@badeball/cypress-cucumber-preprocessor');
+// Check environment setting
+console.log(configManager.getCurrentEnvironment());
 
-module.exports = defineConfig({
-  e2e: {
-    async setupNodeEvents(on, config) {
-      await addCucumberPreprocessorPlugin(on, config);
-      
-      // Add other plugins
-      on('task', {
-        customTask: (params) => {
-          // Custom task implementation
-          return null;
-        }
-      });
-      
-      return config;
-    }
-  }
-});
+// Verify config file exists
+console.log(configManager.getConfig());
 ```
 
-This usage guide provides comprehensive information on how to effectively use the E2E automation framework. For more specific examples and advanced techniques, refer to the example tests in the `cypress/e2e/features/examples/` directory.
+**Browser issues:**
+```bash
+# Verify browser installation
+npx cypress info
+
+# Run in headed mode for debugging
+node scripts/run-tagged-tests.js --tags "@smoke" --headed
+```
+
+This usage guide provides comprehensive information on how to effectively use the simple E2E automation framework. For more examples, check the `cypress/e2e/features/examples/` directory.
 

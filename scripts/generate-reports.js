@@ -1,607 +1,373 @@
 #!/usr/bin/env node
 
 /**
- * Script to generate various test reports
- * Supports multiple report formats and customization
+ * Simple Report Generator
+ * Generates HTML reports from test results
  */
 
-const reportManager = require('../cypress/support/utilities/reportManager');
 const fs = require('fs-extra');
 const path = require('path');
 
-class ReportGenerator {
+class SimpleReportGenerator {
   constructor() {
-    this.args = this.parseArguments();
+    this.reportsDir = 'reports';
+    this.tempDir = path.join(this.reportsDir, 'temp');
+    this.htmlDir = path.join(this.reportsDir, 'html');
   }
 
-  /**
-   * Parse command line arguments
-   * @returns {object} Parsed arguments
-   */
-  parseArguments() {
-    const args = process.argv.slice(2);
-    const parsed = {
-      format: 'all', // all, html, json, xml, cucumber
-      input: 'cypress/reports',
-      output: 'reports',
-      template: 'default',
-      title: 'E2E Test Results',
+  async generateReports() {
+    console.log('📊 Generating Test Reports...\n');
+
+    try {
+      // Ensure directories exist
+      await fs.ensureDir(this.htmlDir);
+
+      // Check if we have test results
+      const hasResults = await this.checkForResults();
+      if (!hasResults) {
+        console.log('⚠️ No test results found. Run tests first.');
+        return;
+      }
+
+      // Generate HTML report
+      await this.generateHtmlReport();
+
+      console.log('✅ Reports generated successfully!');
+      console.log(`📁 Reports location: ${path.resolve(this.htmlDir)}`);
+      console.log(`🌐 Open: ${path.resolve(this.htmlDir, 'index.html')}`);
+
+    } catch (error) {
+      console.error('❌ Error generating reports:', error.message);
+      process.exit(1);
+    }
+  }
+
+  async checkForResults() {
+    // Check for mochawesome results
+    const mochawesomePattern = path.join(this.tempDir, 'mochawesome*.json');
+    const mochawesomeFiles = await this.findFiles(mochawesomePattern);
+
+    // Check for cucumber results
+    const cucumberFile = path.join(this.reportsDir, 'cucumber', 'cucumber-report.json');
+    const hasCucumber = await fs.pathExists(cucumberFile);
+
+    return mochawesomeFiles.length > 0 || hasCucumber;
+  }
+
+  async findFiles(pattern) {
+    try {
+      const glob = require('glob');
+      return glob.sync(pattern);
+    } catch (error) {
+      // If glob is not available, check directory manually
+      try {
+        const files = await fs.readdir(this.tempDir);
+        return files.filter(file => file.includes('mochawesome') && file.endsWith('.json'));
+      } catch (err) {
+        return [];
+      }
+    }
+  }
+
+  async generateHtmlReport() {
+    console.log('📄 Generating HTML report...');
+
+    // Try to use mochawesome-merge and mochawesome-report-generator
+    try {
+      const { execSync } = require('child_process');
+
+      // Merge mochawesome reports
+      const mergeCommand = `npx mochawesome-merge "${this.tempDir}/mochawesome*.json" > "${this.reportsDir}/merged-report.json"`;
+      execSync(mergeCommand, { stdio: 'pipe' });
+
+      // Generate HTML report
+      const generateCommand = `npx mochawesome-report-generator "${this.reportsDir}/merged-report.json" --reportDir "${this.htmlDir}"`;
+      execSync(generateCommand, { stdio: 'pipe' });
+
+      console.log('✅ HTML report generated using mochawesome');
+
+    } catch (error) {
+      // Fallback to simple HTML generation
+      console.log('⚠️ Mochawesome not available, generating simple HTML report...');
+      await this.generateSimpleHtmlReport();
+    }
+  }
+
+  async generateSimpleHtmlReport() {
+    const reportData = await this.collectReportData();
+    const html = this.generateHtmlContent(reportData);
+    
+    const reportPath = path.join(this.htmlDir, 'index.html');
+    await fs.writeFile(reportPath, html);
+    
+    console.log('✅ Simple HTML report generated');
+  }
+
+  async collectReportData() {
+    const data = {
+      timestamp: new Date().toISOString(),
       environment: process.env.CYPRESS_ENV || 'dev',
       browser: process.env.CYPRESS_BROWSER || 'chrome',
-      tags: process.env.CYPRESS_TAGS || 'all',
-      merge: true,
-      open: false,
-      notify: false,
-      help: false
+      summary: {
+        total: 0,
+        passed: 0,
+        failed: 0,
+        skipped: 0
+      },
+      tests: []
     };
 
-    for (let i = 0; i < args.length; i++) {
-      const arg = args[i];
-      const nextArg = args[i + 1];
+    // Try to read mochawesome data
+    try {
+      const tempFiles = await fs.readdir(this.tempDir);
+      const mochawesomeFiles = tempFiles.filter(file => 
+        file.includes('mochawesome') && file.endsWith('.json')
+      );
 
-      switch (arg) {
-        case '--format':
-        case '-f':
-          parsed.format = nextArg;
-          i++;
-          break;
-        case '--input':
-        case '-i':
-          parsed.input = nextArg;
-          i++;
-          break;
-        case '--output':
-        case '-o':
-          parsed.output = nextArg;
-          i++;
-          break;
-        case '--template':
-        case '-t':
-          parsed.template = nextArg;
-          i++;
-          break;
-        case '--title':
-          parsed.title = nextArg;
-          i++;
-          break;
-        case '--environment':
-        case '--env':
-        case '-e':
-          parsed.environment = nextArg;
-          i++;
-          break;
-        case '--browser':
-        case '-b':
-          parsed.browser = nextArg;
-          i++;
-          break;
-        case '--tags':
-          parsed.tags = nextArg;
-          i++;
-          break;
-        case '--no-merge':
-          parsed.merge = false;
-          break;
-        case '--open':
-          parsed.open = true;
-          break;
-        case '--notify':
-        case '-n':
-          parsed.notify = true;
-          break;
-        case '--help':
-        case '-h':
-          parsed.help = true;
-          break;
-        default:
-          if (arg.startsWith('--')) {
-            console.warn(`Unknown argument: ${arg}`);
-          }
-          break;
+      for (const file of mochawesomeFiles) {
+        const filePath = path.join(this.tempDir, file);
+        const fileData = await fs.readJson(filePath);
+        
+        if (fileData.stats) {
+          data.summary.total += fileData.stats.tests || 0;
+          data.summary.passed += fileData.stats.passes || 0;
+          data.summary.failed += fileData.stats.failures || 0;
+          data.summary.skipped += fileData.stats.skipped || 0;
+        }
+
+        if (fileData.tests) {
+          data.tests.push(...fileData.tests);
+        }
       }
+    } catch (error) {
+      console.log('⚠️ Could not read mochawesome data');
     }
 
-    return parsed;
+    return data;
   }
 
-  /**
-   * Show help message
-   */
-  showHelp() {
+  generateHtmlContent(data) {
+    const passRate = data.summary.total > 0 
+      ? Math.round((data.summary.passed / data.summary.total) * 100) 
+      : 0;
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E2E Test Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 0;
+        }
+        .passed { color: #28a745; }
+        .failed { color: #dc3545; }
+        .skipped { color: #ffc107; }
+        .total { color: #007bff; }
+        .details {
+            padding: 30px;
+        }
+        .details h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        .info-item strong {
+            display: block;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+        }
+        @media (max-width: 768px) {
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 E2E Test Report</h1>
+            <p>Simple Cypress + Cucumber Testing Framework</p>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card">
+                <h3>Total Tests</h3>
+                <div class="number total">${data.summary.total}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Passed</h3>
+                <div class="number passed">${data.summary.passed}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Failed</h3>
+                <div class="number failed">${data.summary.failed}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Skipped</h3>
+                <div class="number skipped">${data.summary.skipped}</div>
+            </div>
+        </div>
+
+        <div class="details">
+            <h2>📊 Test Execution Details</h2>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Environment</strong>
+                    ${data.environment}
+                </div>
+                <div class="info-item">
+                    <strong>Browser</strong>
+                    ${data.browser}
+                </div>
+                <div class="info-item">
+                    <strong>Execution Time</strong>
+                    ${new Date(data.timestamp).toLocaleString()}
+                </div>
+                <div class="info-item">
+                    <strong>Pass Rate</strong>
+                    ${passRate}%
+                </div>
+            </div>
+
+            <h3>Success Rate</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${passRate}%"></div>
+            </div>
+            <p style="text-align: center; margin: 10px 0 0 0; color: #666;">
+                ${passRate}% of tests passed
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Generated by Simple E2E Framework • ${new Date().toLocaleString()}</p>
+        </div>
+    </div>
+</body>
+</html>`;
+  }
+
+  static showHelp() {
     console.log(`
-Report Generator for E2E Test Framework
+📊 Simple Report Generator
 
-Usage: node scripts/generate-reports.js [options]
-
-Options:
-  --format, -f <format>   Report format (all, html, json, xml, cucumber) [default: all]
-  --input, -i <path>      Input directory for test results [default: cypress/reports]
-  --output, -o <path>     Output directory for reports [default: reports]
-  --template, -t <name>   Report template (default, minimal, detailed) [default: default]
-  --title <title>         Report title [default: E2E Test Results]
-  --environment, -e <env> Test environment [default: dev]
-  --browser, -b <browser> Browser used for tests [default: chrome]
-  --tags <tags>           Test tags executed [default: all]
-  --no-merge              Don't merge multiple report files
-  --open                  Open generated report in browser
-  --notify, -n            Send notification after generation
-  --help, -h              Show this help message
-
-Examples:
-  # Generate all report formats
+Usage:
   node scripts/generate-reports.js
 
-  # Generate only HTML report
-  node scripts/generate-reports.js --format html
+This script generates HTML reports from your test results.
 
-  # Generate report with custom title and template
-  node scripts/generate-reports.js --title "Regression Tests" --template detailed
+Requirements:
+  - Test results in reports/temp/ directory
+  - Mochawesome JSON files or Cucumber JSON files
 
-  # Generate report and open in browser
-  node scripts/generate-reports.js --open
+Output:
+  - HTML report in reports/html/index.html
 
-  # Generate report with notification
-  node scripts/generate-reports.js --notify
-
-Report Formats:
-  - all: Generate all available report formats
-  - html: Interactive HTML report with charts and details
-  - json: Machine-readable JSON format
-  - xml: JUnit XML format for CI/CD integration
-  - cucumber: BDD-style Cucumber HTML report
-
-Templates:
-  - default: Standard report with all sections
-  - minimal: Compact report with essential information
-  - detailed: Comprehensive report with extended details
+Examples:
+  # Generate reports after running tests
+  npm run test:smoke
+  npm run report:generate
+  npm run report:open
 `);
   }
-
-  /**
-   * Validate arguments
-   */
-  validateArguments() {
-    if (this.args.help) {
-      this.showHelp();
-      process.exit(0);
-    }
-
-    const validFormats = ['all', 'html', 'json', 'xml', 'cucumber'];
-    if (!validFormats.includes(this.args.format)) {
-      console.error(`Invalid report format: ${this.args.format}`);
-      console.error(`Valid formats: ${validFormats.join(', ')}`);
-      process.exit(1);
-    }
-
-    const validTemplates = ['default', 'minimal', 'detailed'];
-    if (!validTemplates.includes(this.args.template)) {
-      console.error(`Invalid template: ${this.args.template}`);
-      console.error(`Valid templates: ${validTemplates.join(', ')}`);
-      process.exit(1);
-    }
-
-    // Check if input directory exists
-    if (!fs.existsSync(this.args.input)) {
-      console.error(`Input directory not found: ${this.args.input}`);
-      process.exit(1);
-    }
-  }
-
-  /**
-   * Collect test results from input directory
-   */
-  async collectTestResults() {
-    console.log('📊 Collecting test results...');
-    
-    const results = {
-      mochawesome: [],
-      cucumber: [],
-      junit: [],
-      screenshots: [],
-      videos: []
-    };
-
-    try {
-      // Collect Mochawesome JSON files
-      const mochawesomePattern = path.join(this.args.input, '**/*.json');
-      const mochawesomeFiles = await this.findFiles(mochawesomePattern);
-      results.mochawesome = mochawesomeFiles.filter(file => 
-        !file.includes('cucumber') && !file.includes('junit')
-      );
-
-      // Collect Cucumber JSON files
-      const cucumberFiles = await this.findFiles(path.join(this.args.input, '**/cucumber*.json'));
-      results.cucumber = cucumberFiles;
-
-      // Collect JUnit XML files
-      const junitFiles = await this.findFiles(path.join(this.args.input, '**/*.xml'));
-      results.junit = junitFiles;
-
-      // Collect screenshots
-      const screenshotFiles = await this.findFiles(path.join('cypress/screenshots', '**/*.png'));
-      results.screenshots = screenshotFiles;
-
-      // Collect videos
-      const videoFiles = await this.findFiles(path.join('cypress/videos', '**/*.mp4'));
-      results.videos = videoFiles;
-
-      console.log(`   Mochawesome files: ${results.mochawesome.length}`);
-      console.log(`   Cucumber files: ${results.cucumber.length}`);
-      console.log(`   JUnit files: ${results.junit.length}`);
-      console.log(`   Screenshots: ${results.screenshots.length}`);
-      console.log(`   Videos: ${results.videos.length}`);
-
-      return results;
-    } catch (error) {
-      console.error('❌ Error collecting test results:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Find files by pattern
-   */
-  async findFiles(pattern) {
-    const glob = require('glob');
-    return new Promise((resolve, reject) => {
-      glob(pattern, (err, files) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(files);
-        }
-      });
-    });
-  }
-
-  /**
-   * Generate HTML report
-   */
-  async generateHtmlReport(testResults) {
-    console.log('🌐 Generating HTML report...');
-    
-    try {
-      let htmlReportPath = null;
-
-      if (testResults.mochawesome.length > 0) {
-        // Merge Mochawesome reports first if needed
-        if (this.args.merge && testResults.mochawesome.length > 1) {
-          const mergedJsonPath = await reportManager.mergeMochawesomeReports(
-            testResults.mochawesome.join(',')
-          );
-          htmlReportPath = await reportManager.generateHtmlReport(mergedJsonPath);
-        } else if (testResults.mochawesome.length === 1) {
-          htmlReportPath = await reportManager.generateHtmlReport(testResults.mochawesome[0]);
-        }
-      }
-
-      if (htmlReportPath) {
-        console.log(`✅ HTML report generated: ${htmlReportPath}`);
-        return htmlReportPath;
-      } else {
-        console.log('⚠️  No Mochawesome data found for HTML report');
-        return null;
-      }
-    } catch (error) {
-      console.error('❌ Error generating HTML report:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate JSON report
-   */
-  async generateJsonReport(testResults) {
-    console.log('📄 Generating JSON report...');
-    
-    try {
-      const jsonReportPath = path.join(this.args.output, 'json', 'consolidated-report.json');
-      
-      const consolidatedData = {
-        metadata: {
-          title: this.args.title,
-          environment: this.args.environment,
-          browser: this.args.browser,
-          tags: this.args.tags,
-          timestamp: new Date().toISOString(),
-          generator: 'E2E Automation Framework v1.0.0'
-        },
-        summary: {
-          totalTests: 0,
-          passed: 0,
-          failed: 0,
-          skipped: 0,
-          duration: 0
-        },
-        results: {
-          mochawesome: testResults.mochawesome,
-          cucumber: testResults.cucumber,
-          junit: testResults.junit
-        },
-        artifacts: {
-          screenshots: testResults.screenshots,
-          videos: testResults.videos
-        }
-      };
-
-      // Calculate summary from Mochawesome data if available
-      if (testResults.mochawesome.length > 0) {
-        for (const file of testResults.mochawesome) {
-          try {
-            const data = await fs.readJson(file);
-            if (data.stats) {
-              consolidatedData.summary.totalTests += data.stats.tests || 0;
-              consolidatedData.summary.passed += data.stats.passes || 0;
-              consolidatedData.summary.failed += data.stats.failures || 0;
-              consolidatedData.summary.skipped += data.stats.pending || 0;
-              consolidatedData.summary.duration += data.stats.duration || 0;
-            }
-          } catch (error) {
-            console.warn(`Warning: Could not parse ${file}`);
-          }
-        }
-      }
-
-      await fs.ensureDir(path.dirname(jsonReportPath));
-      await fs.writeJson(jsonReportPath, consolidatedData, { spaces: 2 });
-      
-      console.log(`✅ JSON report generated: ${jsonReportPath}`);
-      return jsonReportPath;
-    } catch (error) {
-      console.error('❌ Error generating JSON report:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate XML report
-   */
-  async generateXmlReport(testResults) {
-    console.log('📋 Generating XML report...');
-    
-    try {
-      if (testResults.junit.length === 0) {
-        console.log('⚠️  No JUnit XML data found');
-        return null;
-      }
-
-      const xmlReportPath = path.join(this.args.output, 'xml', 'consolidated-junit.xml');
-      
-      // If multiple JUnit files, merge them
-      if (testResults.junit.length > 1) {
-        const xmlBuilder = require('xmlbuilder');
-        const root = xmlBuilder.create('testsuites');
-        
-        let totalTests = 0;
-        let totalFailures = 0;
-        let totalErrors = 0;
-        let totalTime = 0;
-
-        for (const junitFile of testResults.junit) {
-          try {
-            const xmlContent = await fs.readFile(junitFile, 'utf8');
-            // Parse and merge XML content (simplified)
-            // In a real implementation, you'd use a proper XML parser
-            console.log(`Processing JUnit file: ${junitFile}`);
-          } catch (error) {
-            console.warn(`Warning: Could not process ${junitFile}`);
-          }
-        }
-
-        root.att('name', this.args.title);
-        root.att('tests', totalTests);
-        root.att('failures', totalFailures);
-        root.att('errors', totalErrors);
-        root.att('time', totalTime);
-        root.att('timestamp', new Date().toISOString());
-
-        const xmlContent = root.end({ pretty: true });
-        await fs.ensureDir(path.dirname(xmlReportPath));
-        await fs.writeFile(xmlReportPath, xmlContent);
-      } else {
-        // Single file, just copy it
-        await fs.ensureDir(path.dirname(xmlReportPath));
-        await fs.copy(testResults.junit[0], xmlReportPath);
-      }
-      
-      console.log(`✅ XML report generated: ${xmlReportPath}`);
-      return xmlReportPath;
-    } catch (error) {
-      console.error('❌ Error generating XML report:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate Cucumber report
-   */
-  async generateCucumberReport(testResults) {
-    console.log('🥒 Generating Cucumber report...');
-    
-    try {
-      if (testResults.cucumber.length === 0) {
-        console.log('⚠️  No Cucumber JSON data found');
-        return null;
-      }
-
-      const cucumberReportPath = await reportManager.generateCucumberReport(
-        testResults.cucumber[0]
-      );
-      
-      console.log(`✅ Cucumber report generated: ${cucumberReportPath}`);
-      return cucumberReportPath;
-    } catch (error) {
-      console.error('❌ Error generating Cucumber report:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate comprehensive report
-   */
-  async generateComprehensiveReport(generatedReports) {
-    console.log('📋 Generating comprehensive report...');
-    
-    try {
-      const reportData = {
-        timestamp: new Date().toISOString(),
-        title: this.args.title,
-        environment: this.args.environment,
-        browser: this.args.browser,
-        tags: this.args.tags,
-        template: this.args.template,
-        reports: generatedReports
-      };
-
-      const summaryPath = await reportManager.generateSummaryReport(reportData);
-      
-      console.log(`✅ Comprehensive report generated: ${summaryPath}`);
-      return summaryPath;
-    } catch (error) {
-      console.error('❌ Error generating comprehensive report:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Open report in browser
-   */
-  async openReport(reportPath) {
-    if (!this.args.open || !reportPath) return;
-
-    try {
-      const open = require('open');
-      await open(reportPath);
-      console.log(`🌐 Opened report in browser: ${reportPath}`);
-    } catch (error) {
-      console.error('❌ Error opening report:', error.message);
-    }
-  }
-
-  /**
-   * Send notification
-   */
-  async sendNotification(generatedReports) {
-    if (!this.args.notify) return;
-
-    try {
-      const reportData = {
-        timestamp: new Date().toISOString(),
-        environment: this.args.environment,
-        browser: this.args.browser,
-        tags: this.args.tags,
-        reports: generatedReports
-      };
-
-      await reportManager.sendReportNotification(reportData, {
-        success: true, // This would be determined from actual test results
-        reportUrl: process.env.REPORT_URL || 'http://localhost:3000/reports'
-      });
-      
-      console.log('📧 Notification sent successfully');
-    } catch (error) {
-      console.error('❌ Error sending notification:', error.message);
-    }
-  }
-
-  /**
-   * Main execution method
-   */
-  async run() {
-    console.log('🚀 Starting report generation...');
-    console.log(`Format: ${this.args.format}`);
-    console.log(`Template: ${this.args.template}`);
-    console.log(`Environment: ${this.args.environment}`);
-    console.log(`Browser: ${this.args.browser}`);
-    console.log(`Tags: ${this.args.tags}`);
-    console.log('─'.repeat(50));
-
-    const startTime = Date.now();
-    const generatedReports = {};
-
-    try {
-      // Collect test results
-      const testResults = await this.collectTestResults();
-
-      // Generate reports based on format
-      if (this.args.format === 'all' || this.args.format === 'html') {
-        const htmlReport = await this.generateHtmlReport(testResults);
-        if (htmlReport) {
-          generatedReports.html = htmlReport;
-        }
-      }
-
-      if (this.args.format === 'all' || this.args.format === 'json') {
-        const jsonReport = await this.generateJsonReport(testResults);
-        if (jsonReport) {
-          generatedReports.json = jsonReport;
-        }
-      }
-
-      if (this.args.format === 'all' || this.args.format === 'xml') {
-        const xmlReport = await this.generateXmlReport(testResults);
-        if (xmlReport) {
-          generatedReports.xml = xmlReport;
-        }
-      }
-
-      if (this.args.format === 'all' || this.args.format === 'cucumber') {
-        const cucumberReport = await this.generateCucumberReport(testResults);
-        if (cucumberReport) {
-          generatedReports.cucumber = cucumberReport;
-        }
-      }
-
-      // Generate comprehensive report if multiple formats
-      if (this.args.format === 'all' && Object.keys(generatedReports).length > 0) {
-        const summaryReport = await this.generateComprehensiveReport(generatedReports);
-        generatedReports.summary = summaryReport;
-      }
-
-      // Open report in browser if requested
-      const primaryReport = generatedReports.html || generatedReports.summary;
-      await this.openReport(primaryReport);
-
-      // Send notification if requested
-      await this.sendNotification(generatedReports);
-
-      const endTime = Date.now();
-      const duration = ((endTime - startTime) / 1000).toFixed(2);
-
-      console.log('─'.repeat(50));
-      console.log(`✅ Report generation completed successfully in ${duration}s`);
-      
-      if (Object.keys(generatedReports).length === 0) {
-        console.log('⚠️  No reports were generated');
-        process.exit(1);
-      }
-
-      // Display generated report paths
-      console.log('\n📁 Generated Reports:');
-      Object.entries(generatedReports).forEach(([type, path]) => {
-        console.log(`   ${type.toUpperCase()}: ${path}`);
-      });
-
-      process.exit(0);
-    } catch (error) {
-      const endTime = Date.now();
-      const duration = ((endTime - startTime) / 1000).toFixed(2);
-      
-      console.log('─'.repeat(50));
-      console.error(`❌ Report generation failed after ${duration}s`);
-      console.error(`Error: ${error.message}`);
-      
-      process.exit(1);
-    }
-  }
 }
 
-// Main execution
-if (require.main === module) {
-  const generator = new ReportGenerator();
-  generator.validateArguments();
-  generator.run();
+// Show help if requested
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  SimpleReportGenerator.showHelp();
+  process.exit(0);
 }
 
-module.exports = ReportGenerator;
+// Generate reports
+const generator = new SimpleReportGenerator();
+generator.generateReports();
 
