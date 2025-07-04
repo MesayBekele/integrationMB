@@ -3,11 +3,15 @@
  * Common commands for UI testing
  */
 
-const configManager = require('./utilities/configManager');
-
-// Login command
+// Login command with direct credentials
 Cypress.Commands.add('loginAs', (userType) => {
-  const user = configManager.getUser(userType);
+  // Simple user data - can be moved to fixtures later
+  const users = {
+    admin: { username: 'admin', password: 'admin123' },
+    user: { username: 'user', password: 'user123' }
+  };
+  
+  const user = users[userType] || users.user;
   cy.visit('/login');
   cy.get('[data-cy="username"]').type(user.username);
   cy.get('[data-cy="password"]').type(user.password);
@@ -173,4 +177,3 @@ Cypress.Commands.add('generateTestData', (type) => {
   
   return generators[type] ? generators[type]() : `test-${type}-${Date.now()}`;
 });
-
