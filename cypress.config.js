@@ -20,11 +20,12 @@ module.exports = defineConfig({
     specPattern: 'cypress/e2e/features/**/*.feature',
     supportFile: 'cypress/support/e2e.js',
     
-    // Screenshots and videos
+    // Screenshots and videos - optimized to prevent encoding issues
     screenshotsFolder: 'cypress/screenshots',
     videosFolder: 'cypress/videos',
     video: true,
     screenshotOnRunFailure: true,
+    videoCompression: 32, // Reduce compression to prevent encoding issues
     
     // Browser settings
     chromeWebSecurity: false,
@@ -35,7 +36,7 @@ module.exports = defineConfig({
       tags: '@smoke'
     },
     
-    // Mochawesome reporter configuration - simplified and direct
+    // Mochawesome reporter configuration - fixed Base64 encoding issues
     reporter: 'cypress-mochawesome-reporter',
     reporterOptions: {
       reportDir: 'reports/temp',
@@ -45,8 +46,8 @@ module.exports = defineConfig({
       timestamp: 'mmddyyyy_HHMMss',
       reportTitle: 'E2E Test Report',
       reportPageTitle: 'Cypress E2E Tests',
-      embeddedScreenshots: true,
-      inlineAssets: true,
+      embeddedScreenshots: false, // Fix: Disable to prevent Base64 encoding issues
+      inlineAssets: false, // Fix: Disable to prevent asset encoding issues
       saveAllAttempts: false,
       ignoreVideos: false,
       videoOnFailOnly: false
