@@ -65,7 +65,8 @@ module.exports = defineConfig({
           plugins: [createEsbuildPlugin(config)],
           // Fix for source mapping issue
           sourcemap: false,
-          target: 'node14',
+          // Dynamic target based on current Node version (currently Node 22)
+          target: `node${process.version.split('.')[0].substring(1)}`,
           format: 'cjs'
         })
       );
