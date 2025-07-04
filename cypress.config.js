@@ -36,7 +36,7 @@ module.exports = defineConfig({
       tags: '@smoke'
     },
     
-    // Mochawesome reporter configuration - fixed Base64 encoding issues
+    // Mochawesome reporter configuration - comprehensive Base64 encoding fix
     reporter: 'cypress-mochawesome-reporter',
     reporterOptions: {
       reportDir: 'reports/temp',
@@ -50,7 +50,12 @@ module.exports = defineConfig({
       inlineAssets: false, // Fix: Disable to prevent asset encoding issues
       saveAllAttempts: false,
       ignoreVideos: false,
-      videoOnFailOnly: false
+      videoOnFailOnly: false,
+      // Additional Base64 encoding prevention
+      charts: false, // Disable charts that might use Base64 encoding
+      code: false, // Disable code display that might cause encoding issues
+      autoOpen: false, // Prevent automatic opening that might trigger encoding
+      quiet: true // Reduce verbose output that might contain problematic data
     },
     
     async setupNodeEvents(on, config) {
