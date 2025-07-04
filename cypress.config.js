@@ -56,10 +56,14 @@ module.exports = defineConfig({
       // Cucumber preprocessor
       await addCucumberPreprocessorPlugin(on, config);
       
-      // Esbuild bundler for step definitions
+      // Esbuild bundler for step definitions with source mapping fix
       on('file:preprocessor',
         createBundler({
           plugins: [createEsbuildPlugin(config)],
+          // Fix for source mapping issue
+          sourcemap: false,
+          target: 'node14',
+          format: 'cjs'
         })
       );
 
@@ -104,4 +108,3 @@ module.exports = defineConfig({
     },
   },
 });
-
