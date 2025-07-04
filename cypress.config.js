@@ -6,7 +6,7 @@ const createBundler = require('@bahmutov/cypress-esbuild-preprocessor');
 module.exports = defineConfig({
   e2e: {
     // Base configuration
-    baseUrl: 'https://example.com',
+    baseUrl: null, // Set to null to avoid connection issues during setup
     viewportWidth: 1280,
     viewportHeight: 720,
     
@@ -53,7 +53,10 @@ module.exports = defineConfig({
     },
     
     async setupNodeEvents(on, config) {
-      // Cucumber preprocessor
+      // Mochawesome reporter plugin (setup first to avoid conflicts)
+      require('cypress-mochawesome-reporter/plugin')(on);
+      
+      // Cucumber preprocessor (setup after reporter)
       await addCucumberPreprocessorPlugin(on, config);
       
       // Esbuild bundler for step definitions with source mapping fix
@@ -66,9 +69,6 @@ module.exports = defineConfig({
           format: 'cjs'
         })
       );
-
-      // Mochawesome reporter plugin
-      require('cypress-mochawesome-reporter/plugin')(on);
 
       // Task for logging
       on('task', {
