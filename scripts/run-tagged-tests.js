@@ -1,311 +1,158 @@
 #!/usr/bin/env node
 
 /**
- * Script to run Cypress tests with specific tags
- * Usage: node scripts/run-tagged-tests.js --tags "@smoke and @ui" --env dev
+ * Simple Tagged Test Runner
+ * Runs Cypress tests with specific tags and environments
  */
 
-const { spawn } = require('child_process');
+const { execSync } = require('child_process');
 const path = require('path');
-const fs = require('fs');
 
-class TaggedTestRunner {
+class SimpleTestRunner {
   constructor() {
     this.args = this.parseArguments();
-    this.validateArguments();
   }
 
-  /**
-   * Parse command line arguments
-   * @returns {object} Parsed arguments
-   */
   parseArguments() {
-    const args = process.argv.slice(2);
-    const parsed = {
-      tags: '',
+    const args = {
+      tags: '@smoke',
       environment: 'dev',
       browser: 'chrome',
       headless: true,
-      parallel: false,
-      record: false,
-      spec: '',
-      help: false
+      spec: null
     };
 
-    for (let i = 0; i < args.length; i++) {
-      const arg = args[i];
-      const nextArg = args[i + 1];
-
-      switch (arg) {
-        case '--tags':
-        case '-t':
-          parsed.tags = nextArg;
-          i++;
-          break;
-        case '--environment':
-        case '--env':
-        case '-e':
-          parsed.environment = nextArg;
-          i++;
-          break;
-        case '--browser':
-        case '-b':
-          parsed.browser = nextArg;
-          i++;
-          break;
-        case '--headed':
-          parsed.headless = false;
-          break;
-        case '--headless':
-          parsed.headless = true;
-          break;
-        case '--parallel':
-        case '-p':
-          parsed.parallel = true;
-          break;
-        case '--record':
-        case '-r':
-          parsed.record = true;
-          break;
-        case '--spec':
-        case '-s':
-          parsed.spec = nextArg;
-          i++;
-          break;
-        case '--help':
-        case '-h':
-          parsed.help = true;
-          break;
-        default:
-          if (arg.startsWith('--')) {
-            console.warn(`Unknown argument: ${arg}`);
-          }
-          break;
+    // Parse command line arguments
+    process.argv.forEach((arg, index) => {
+      if (arg === '--tags' && process.argv[index + 1]) {
+        args.tags = process.argv[index + 1];
       }
-    }
+      if (arg === '--env' && process.argv[index + 1]) {
+        args.environment = process.argv[index + 1];
+      }
+      if (arg === '--browser' && process.argv[index + 1]) {
+        args.browser = process.argv[index + 1];
+      }
+      if (arg === '--headed') {
+        args.headless = false;
+      }
+      if (arg === '--spec' && process.argv[index + 1]) {
+        args.spec = process.argv[index + 1];
+      }
+    });
 
-    return parsed;
+    return args;
   }
 
-  /**
-   * Validate arguments
-   */
-  validateArguments() {
-    if (this.args.help) {
-      this.showHelp();
-      process.exit(0);
+  buildCypressCommand() {
+    let command = 'npx cypress run';
+
+    // Add browser
+    command += ` --browser ${this.args.browser}`;
+
+    // Add headless mode
+    if (!this.args.headless) {
+      command += ' --headed';
     }
 
-    // Validate environment
-    const validEnvironments = ['dev', 'qa', 'uat'];
-    if (!validEnvironments.includes(this.args.environment)) {
-      console.error(`Invalid environment: ${this.args.environment}`);
-      console.error(`Valid environments: ${validEnvironments.join(', ')}`);
-      process.exit(1);
+    // Add environment variables
+    const envVars = [
+      `environment=${this.args.environment}`,
+      `tags='${this.args.tags}'`
+    ];
+    command += ` --env ${envVars.join(',')}`;
+
+    // Add specific spec if provided
+    if (this.args.spec) {
+      command += ` --spec "${this.args.spec}"`;
     }
 
-    // Validate browser
-    const validBrowsers = ['chrome', 'firefox', 'edge', 'electron'];
-    if (!validBrowsers.includes(this.args.browser)) {
-      console.error(`Invalid browser: ${this.args.browser}`);
-      console.error(`Valid browsers: ${validBrowsers.join(', ')}`);
-      process.exit(1);
-    }
+    return command;
+  }
 
-    // Check if environment config exists
-    const configPath = path.join(process.cwd(), 'config', `${this.args.environment}.json`);
-    if (!fs.existsSync(configPath)) {
-      console.error(`Environment configuration not found: ${configPath}`);
+  run() {
+    console.log('🚀 Simple E2E Test Runner');
+    console.log('========================');
+    console.log(`Environment: ${this.args.environment}`);
+    console.log(`Tags: ${this.args.tags}`);
+    console.log(`Browser: ${this.args.browser}`);
+    console.log(`Headless: ${this.args.headless}`);
+    if (this.args.spec) {
+      console.log(`Spec: ${this.args.spec}`);
+    }
+    console.log('========================\n');
+
+    const command = this.buildCypressCommand();
+    console.log(`Executing: ${command}\n`);
+
+    try {
+      execSync(command, { 
+        stdio: 'inherit',
+        cwd: process.cwd()
+      });
+      console.log('\n✅ Tests completed successfully!');
+    } catch (error) {
+      console.log('\n❌ Tests failed!');
       process.exit(1);
     }
   }
 
-  /**
-   * Show help message
-   */
-  showHelp() {
+  static showHelp() {
     console.log(`
-Tagged Test Runner for Cypress
+🚀 Simple E2E Test Runner
 
-Usage: node scripts/run-tagged-tests.js [options]
+Usage:
+  node scripts/run-tagged-tests.js [options]
 
 Options:
-  --tags, -t <expression>     Tag expression to filter tests (e.g., "@smoke and @ui")
-  --environment, --env, -e    Target environment (dev, qa, uat) [default: dev]
-  --browser, -b <browser>     Browser to use (chrome, firefox, edge, electron) [default: chrome]
-  --headed                    Run tests in headed mode
-  --headless                  Run tests in headless mode [default]
-  --parallel, -p              Run tests in parallel
-  --record, -r                Record tests to Cypress Dashboard
-  --spec, -s <pattern>        Spec file pattern to run
-  --help, -h                  Show this help message
+  --tags <tags>        Test tags to run (default: @smoke)
+  --env <environment>  Environment to test (default: dev)
+  --browser <browser>  Browser to use (default: chrome)
+  --headed            Run in headed mode (default: headless)
+  --spec <spec>       Specific spec file to run
+  --help              Show this help message
 
 Examples:
   # Run smoke tests in dev environment
   node scripts/run-tagged-tests.js --tags "@smoke" --env dev
 
-  # Run UI tests in QA environment with Firefox
-  node scripts/run-tagged-tests.js --tags "@ui" --env qa --browser firefox
+  # Run regression tests in QA with Firefox
+  node scripts/run-tagged-tests.js --tags "@regression" --env qa --browser firefox
 
-  # Run critical tests in headed mode
-  node scripts/run-tagged-tests.js --tags "@critical" --headed
+  # Run UI tests in headed mode
+  node scripts/run-tagged-tests.js --tags "@ui" --headed
 
-  # Run regression tests in parallel
-  node scripts/run-tagged-tests.js --tags "@regression" --parallel
+  # Run specific feature file
+  node scripts/run-tagged-tests.js --spec "cypress/e2e/features/examples/login.feature"
 
-  # Run specific feature tests
-  node scripts/run-tagged-tests.js --tags "@login and @smoke"
+Available Tags:
+  @smoke      - Quick smoke tests
+  @regression - Full regression tests
+  @ui         - UI-focused tests
+  @critical   - Critical functionality tests
+  @mobile     - Mobile-specific tests
 
-Tag Categories:
-  Test Types: @smoke, @regression, @sanity, @integration, @e2e
-  Components: @ui, @api, @database, @mobile, @desktop
-  Priorities: @critical, @high, @medium, @low
-  Features: @login, @registration, @checkout, @payment, @profile
-  Status: @wip, @ready, @blocked, @skip
+Available Environments:
+  dev  - Development environment
+  qa   - QA environment
+  uat  - UAT environment
 
-Tag Expressions:
-  - Use 'and' for intersection: "@smoke and @ui"
-  - Use 'or' for union: "@smoke or @regression"
-  - Use 'not' for exclusion: "@regression and not @wip"
-  - Use parentheses for grouping: "(@smoke or @sanity) and @ui"
+Available Browsers:
+  chrome   - Google Chrome
+  firefox  - Mozilla Firefox
+  edge     - Microsoft Edge
+  electron - Electron (default Cypress browser)
 `);
   }
-
-  /**
-   * Build Cypress command
-   * @returns {object} Command and arguments
-   */
-  buildCommand() {
-    const command = 'npx';
-    const args = ['cypress', 'run'];
-
-    // Environment
-    args.push('--env', `environment=${this.args.environment}`);
-
-    // Tags
-    if (this.args.tags) {
-      args.push('--env', `tags=${this.args.tags}`);
-    }
-
-    // Browser
-    args.push('--browser', this.args.browser);
-
-    // Headless/headed
-    if (!this.args.headless) {
-      args.push('--headed');
-    }
-
-    // Parallel execution
-    if (this.args.parallel) {
-      args.push('--parallel');
-    }
-
-    // Recording
-    if (this.args.record) {
-      args.push('--record');
-    }
-
-    // Spec pattern
-    if (this.args.spec) {
-      args.push('--spec', this.args.spec);
-    }
-
-    return { command, args };
-  }
-
-  /**
-   * Run the tests
-   */
-  async run() {
-    console.log('🚀 Starting tagged test execution...');
-    console.log(`Environment: ${this.args.environment}`);
-    console.log(`Browser: ${this.args.browser}`);
-    console.log(`Tags: ${this.args.tags || 'All tests'}`);
-    console.log(`Mode: ${this.args.headless ? 'Headless' : 'Headed'}`);
-    
-    if (this.args.parallel) {
-      console.log('Parallel execution: Enabled');
-    }
-    
-    console.log('─'.repeat(50));
-
-    const { command, args } = this.buildCommand();
-    
-    console.log(`Executing: ${command} ${args.join(' ')}`);
-    console.log('─'.repeat(50));
-
-    const startTime = Date.now();
-
-    return new Promise((resolve, reject) => {
-      const child = spawn(command, args, {
-        stdio: 'inherit',
-        shell: true
-      });
-
-      child.on('close', (code) => {
-        const endTime = Date.now();
-        const duration = ((endTime - startTime) / 1000).toFixed(2);
-        
-        console.log('─'.repeat(50));
-        console.log(`Test execution completed in ${duration}s`);
-        
-        if (code === 0) {
-          console.log('✅ All tests passed!');
-          resolve(code);
-        } else {
-          console.log(`❌ Tests failed with exit code: ${code}`);
-          reject(new Error(`Tests failed with exit code: ${code}`));
-        }
-      });
-
-      child.on('error', (error) => {
-        console.error('❌ Failed to start test execution:', error.message);
-        reject(error);
-      });
-    });
-  }
-
-  /**
-   * Generate test execution report
-   */
-  generateReport() {
-    const reportData = {
-      timestamp: new Date().toISOString(),
-      environment: this.args.environment,
-      browser: this.args.browser,
-      tags: this.args.tags,
-      parallel: this.args.parallel,
-      headless: this.args.headless
-    };
-
-    const reportPath = path.join(process.cwd(), 'reports', 'execution-report.json');
-    
-    // Ensure reports directory exists
-    const reportsDir = path.dirname(reportPath);
-    if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true });
-    }
-
-    fs.writeFileSync(reportPath, JSON.stringify(reportData, null, 2));
-    console.log(`📊 Execution report saved: ${reportPath}`);
-  }
 }
 
-// Main execution
-if (require.main === module) {
-  const runner = new TaggedTestRunner();
-  
-  runner.run()
-    .then(() => {
-      runner.generateReport();
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Test execution failed:', error.message);
-      runner.generateReport();
-      process.exit(1);
-    });
+// Show help if requested
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  SimpleTestRunner.showHelp();
+  process.exit(0);
 }
 
-module.exports = TaggedTestRunner;
+// Run the tests
+const runner = new SimpleTestRunner();
+runner.run();
 

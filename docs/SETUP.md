@@ -1,45 +1,92 @@
-# E2E Automation Framework Setup Guide
+# 🚀 Simple E2E Framework Setup Guide
 
-This guide will help you set up the E2E automation testing framework on your local machine and CI/CD environment.
+This guide will help you set up the simple E2E automation testing framework on your local machine.
 
 ## 📋 Prerequisites
 
 ### System Requirements
 - **Node.js**: Version 16.x or higher
-- **npm**: Version 8.x or higher (comes with Node.js)
+- **npm**: Version 8.x or higher
 - **Git**: Latest version
-- **Operating System**: Windows 10+, macOS 10.15+, or Ubuntu 18.04+
 
 ### Browser Requirements
 - **Chrome**: Version 90+ (recommended)
 - **Firefox**: Version 88+
 - **Edge**: Version 90+
 
-### Optional Requirements
-- **Docker**: For containerized testing
-- **Jenkins**: For CI/CD integration
-- **Database**: MySQL 8.0+ or PostgreSQL 12+ (for database testing)
+## 🚀 Quick Setup
 
-## 🚀 Quick Start
-
-### 1. Clone the Repository
+### 1. Clone and Install
 ```bash
 git clone <repository-url>
-cd e2e-automation-framework
-```
-
-### 2. Install Dependencies
-```bash
+cd simple-e2e-framework
 npm install
 ```
 
-### 3. Verify Installation
+### 2. Verify Installation
 ```bash
 # Verify Cypress installation
 npx cypress verify
 
 # Check Cypress info
 npx cypress info
+```
+
+### 3. Configure Environments
+Update the configuration files in the `config/` directory:
+
+**config/dev.json**
+```json
+{
+  "baseUrl": "https://your-dev-site.com",
+  "timeout": 10000,
+  "users": {
+    "admin": {
+      "username": "your_admin_username",
+      "password": "your_admin_password"
+    },
+    "user": {
+      "username": "your_user_username",
+      "password": "your_user_password"
+    }
+  }
+}
+```
+
+**config/qa.json**
+```json
+{
+  "baseUrl": "https://your-qa-site.com",
+  "timeout": 15000,
+  "users": {
+    "admin": {
+      "username": "qa_admin_username",
+      "password": "qa_admin_password"
+    },
+    "user": {
+      "username": "qa_user_username",
+      "password": "qa_user_password"
+    }
+  }
+}
+```
+
+**config/uat.json**
+```json
+{
+  "baseUrl": "https://your-uat-site.com",
+  "timeout": 15000,
+  "users": {
+    "admin": {
+      "username": "uat_admin_username",
+      "password": "uat_admin_password"
+    },
+    "user": {
+      "username": "uat_user_username",
+      "password": "uat_user_password"
+    }
+  }
+}
 ```
 
 ### 4. Run Your First Test
@@ -51,136 +98,131 @@ npm run cy:open
 npm run test:smoke
 ```
 
-## 🔧 Detailed Setup
+## 🔧 Configuration Options
 
-### Environment Configuration
+### Environment Variables
+You can set environment variables to override defaults:
 
-1. **Copy Environment Template**
-   ```bash
-   cp config/dev.json.example config/dev.json
-   ```
-
-2. **Update Configuration Files**
-   Edit the configuration files in the `config/` directory:
-   - `config/dev.json` - Development environment
-   - `config/qa.json` - QA environment
-   - `config/uat.json` - UAT environment
-
-3. **Set Environment Variables** (Optional)
-   Create a `.env` file in the root directory:
-   ```bash
-   # Application URLs
-   BASE_URL=https://dev.example.com
-   API_URL=https://api-dev.example.com
-   
-   # Database Configuration
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=testdb
-   DB_USER=testuser
-   DB_PASSWORD=testpass
-   
-   # Cypress Configuration
-   CYPRESS_ENV=dev
-   CYPRESS_BROWSER=chrome
-   
-   # Integrations
-   SLACK_WEBHOOK=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
-   JIRA_BASE_URL=https://yourcompany.atlassian.net
-   JIRA_TOKEN=your_jira_token
-   ```
-
-### Database Setup (Optional)
-
-If you're using database testing features:
-
-1. **Install Database Client**
-   ```bash
-   # For MySQL
-   npm install mysql2
-   
-   # For PostgreSQL (already included)
-   npm install pg
-   ```
-
-2. **Create Test Database**
-   ```sql
-   -- MySQL
-   CREATE DATABASE testdb_dev;
-   CREATE USER 'testuser'@'localhost' IDENTIFIED BY 'testpass';
-   GRANT ALL PRIVILEGES ON testdb_dev.* TO 'testuser'@'localhost';
-   
-   -- PostgreSQL
-   CREATE DATABASE testdb_dev;
-   CREATE USER testuser WITH PASSWORD 'testpass';
-   GRANT ALL PRIVILEGES ON DATABASE testdb_dev TO testuser;
-   ```
-
-3. **Run Database Migrations** (if applicable)
-   ```bash
-   # Add your database migration commands here
-   npm run db:migrate
-   ```
-
-### IDE Configuration
-
-#### Visual Studio Code
-1. Install recommended extensions:
-   - Cypress Snippets
-   - Cucumber (Gherkin) Full Support
-   - ESLint
-   - Prettier
-
-2. Add to `.vscode/settings.json`:
-   ```json
-   {
-     "cucumberautocomplete.steps": [
-       "cypress/support/step_definitions/*.js"
-     ],
-     "cucumberautocomplete.syncfeatures": "cypress/e2e/features/**/*.feature",
-     "cucumberautocomplete.strictGherkinCompletion": true
-   }
-   ```
-
-#### IntelliJ IDEA / WebStorm
-1. Install plugins:
-   - Cucumber for JavaScript
-   - Gherkin
-   - Cypress Support Pro
-
-2. Configure file associations for `.feature` files
-
-## 🐳 Docker Setup
-
-### Build Docker Image
 ```bash
-npm run docker:build
+# Set environment
+export CYPRESS_ENV=qa
+
+# Set browser
+export CYPRESS_BROWSER=firefox
+
+# Set tags
+export CYPRESS_TAGS="@regression"
 ```
 
-### Run Tests in Docker
-```bash
-npm run docker:run
+### Cypress Configuration
+The main configuration is in `cypress.config.js`. Key settings:
+
+```javascript
+module.exports = defineConfig({
+  e2e: {
+    baseUrl: 'https://example.com',        // Default base URL
+    viewportWidth: 1280,                   // Browser width
+    viewportHeight: 720,                   // Browser height
+    defaultCommandTimeout: 10000,         // Command timeout
+    pageLoadTimeout: 30000,               // Page load timeout
+    video: true,                          // Record videos
+    screenshotOnRunFailure: true,         // Screenshots on failure
+  }
+});
 ```
 
-### Custom Docker Configuration
-Edit `docker/Dockerfile` to customize the Docker environment.
+## 🧪 Running Tests
+
+### Interactive Mode
+```bash
+# Open Cypress Test Runner
+npm run cy:open
+```
+
+### Headless Mode
+```bash
+# Run all tests
+npm run cy:run
+
+# Run smoke tests
+npm run test:smoke
+
+# Run regression tests
+npm run test:regression
+
+# Run UI tests
+npm run test:ui
+```
+
+### Environment-Specific Testing
+```bash
+# Test in development
+npm run test:dev
+
+# Test in QA
+npm run test:qa
+
+# Test in UAT
+npm run test:uat
+```
+
+### Browser-Specific Testing
+```bash
+# Chrome (default)
+npm run cy:run:chrome
+
+# Firefox
+npm run cy:run:firefox
+
+# Edge
+npm run cy:run:edge
+```
+
+### Custom Test Execution
+```bash
+# Run with specific tags
+node scripts/run-tagged-tests.js --tags "@smoke" --env dev
+
+# Run with specific browser
+node scripts/run-tagged-tests.js --tags "@ui" --browser firefox
+
+# Run in headed mode
+node scripts/run-tagged-tests.js --tags "@smoke" --headed
+
+# Run specific feature file
+node scripts/run-tagged-tests.js --spec "cypress/e2e/features/examples/login.feature"
+```
+
+## 📊 Generating Reports
+
+### Generate HTML Reports
+```bash
+# Generate reports
+npm run report:generate
+
+# Open reports in browser
+npm run report:open
+```
+
+### Report Location
+Reports are generated in:
+- `reports/html/index.html` - Main HTML report
+- `reports/temp/` - Raw test results
+- `cypress/screenshots/` - Test screenshots
+- `cypress/videos/` - Test videos
 
 ## 🔄 Jenkins Setup
 
-### Automated Setup
-Run the Jenkins setup script:
-```bash
-sudo bash scripts/jenkins-setup.sh
-```
+### Prerequisites
+- Jenkins server with Node.js plugin
+- Git access to your repository
 
-### Manual Setup
+### Setup Steps
 
-1. **Install Required Plugins**
+1. **Install Jenkins Plugins**
    - NodeJS Plugin
    - Pipeline Plugin
    - HTML Publisher Plugin
-   - JUnit Plugin
-   - Slack Notification Plugin
 
 2. **Configure Node.js**
    - Go to Manage Jenkins > Global Tool Configuration
@@ -191,78 +233,49 @@ sudo bash scripts/jenkins-setup.sh
    - Use the provided `Jenkinsfile`
    - Configure parameters as needed
 
-4. **Set Up Credentials**
-   Use the template at `/var/lib/jenkins/credentials-template.txt`
+4. **Run Pipeline**
+   - Select environment, browser, and tags
+   - Execute build
+   - View reports in build artifacts
 
-## 🧪 Running Tests
+### Jenkins Parameters
+- **Environment**: dev, qa, uat
+- **Browser**: chrome, firefox, edge
+- **Tags**: @smoke, @regression, @ui, etc.
+- **Headless Mode**: true/false
 
-### Local Development
-```bash
-# Open Cypress Test Runner
-npm run cy:open
+## 🐳 Docker Setup (Optional)
 
-# Run all tests headlessly
-npm run cy:run
+### Create Dockerfile
+```dockerfile
+FROM cypress/browsers:node16.14.2-slim-chrome103-ff102
 
-# Run specific test types
-npm run test:smoke
-npm run test:regression
-npm run test:api
-npm run test:ui
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
 
-# Run tests in specific environment
-npm run test:dev
-npm run test:qa
-npm run test:uat
+COPY . .
 
-# Run tests with specific browser
-npm run cy:run:chrome
-npm run cy:run:firefox
-npm run cy:run:edge
+CMD ["npm", "run", "test:smoke"]
 ```
 
-### Using Tags
+### Build and Run
 ```bash
-# Run tests with specific tags
-npm run cy:run -- --env tags="@smoke"
-npm run cy:run -- --env tags="@smoke and @ui"
-npm run cy:run -- --env tags="@regression and not @wip"
+# Build Docker image
+docker build -t simple-e2e-tests .
 
-# Using the tag runner script
-node scripts/run-tagged-tests.js --tags "@smoke" --env dev
-```
+# Run tests in container
+docker run --rm simple-e2e-tests
 
-### Parallel Execution
-```bash
-# Run tests in parallel (requires Cypress Dashboard)
-npm run test:parallel
-```
-
-## 📊 Report Generation
-
-### Generate Reports
-```bash
-# Merge and generate all reports
-npm run report:merge
-npm run report:generate
-
-# Open HTML report
-npm run report:open
-```
-
-### Custom Report Generation
-```bash
-# Generate specific report format
-node scripts/generate-reports.js --format html
-node scripts/generate-reports.js --format cucumber
-node scripts/generate-reports.js --format json
+# Run with environment variables
+docker run --rm -e CYPRESS_ENV=qa simple-e2e-tests
 ```
 
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
-#### Cypress Installation Issues
+#### Cypress Installation Problems
 ```bash
 # Clear Cypress cache
 npx cypress cache clear
@@ -278,34 +291,30 @@ npx cypress verify
 #### Browser Issues
 ```bash
 # Install missing dependencies (Linux)
-sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 libatspi2.0-0 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxkbcommon0 libgtk-3-0
+sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2
 
 # For headless mode issues
 export DISPLAY=:99
 Xvfb :99 -screen 0 1280x720x16 &
 ```
 
-#### Network Issues
+#### Configuration Issues
 ```bash
-# Configure proxy (if needed)
-npm config set proxy http://proxy.company.com:8080
-npm config set https-proxy http://proxy.company.com:8080
+# Check configuration files
+cat config/dev.json
 
-# Configure Cypress proxy
-export HTTP_PROXY=http://proxy.company.com:8080
-export HTTPS_PROXY=http://proxy.company.com:8080
+# Verify environment loading
+npm run cy:open
+# Check the Settings tab in Cypress
 ```
 
-#### Permission Issues
+#### Test Execution Issues
 ```bash
-# Fix npm permissions (Linux/Mac)
-sudo chown -R $(whoami) ~/.npm
-sudo chown -R $(whoami) ~/.cypress
+# Run with debug output
+DEBUG=cypress:* npm run cy:run
 
-# Or use npm prefix
-mkdir ~/.npm-global
-npm config set prefix '~/.npm-global'
-export PATH=~/.npm-global/bin:$PATH
+# Check for syntax errors
+npx cypress run --spec "cypress/e2e/features/examples/login.feature"
 ```
 
 ### Debug Mode
@@ -317,65 +326,70 @@ DEBUG=cypress:* npm run cy:run
 DEBUG=cypress:server:* npm run cy:run
 ```
 
-### Log Files
-Check log files for detailed error information:
-- Cypress logs: `~/.cypress/logs/`
-- Application logs: `logs/`
-- Test reports: `reports/`
+## 📝 Writing Your First Test
 
-## 🔧 Advanced Configuration
+### 1. Create Feature File
+Create `cypress/e2e/features/my-feature.feature`:
 
-### Custom Commands
-Add custom commands in `cypress/support/commands.js`:
+```gherkin
+@smoke @ui
+Feature: My Feature
+  As a user
+  I want to test my feature
+  So that I can ensure it works
+
+  @critical
+  Scenario: Basic functionality
+    Given I am on the home page
+    When I click the "Get Started" button
+    Then I should see the welcome message
+```
+
+### 2. Create Step Definitions
+Create `cypress/support/step_definitions/my_steps.js`:
+
 ```javascript
-Cypress.Commands.add('customCommand', (param) => {
-  // Your custom command logic
+import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
+
+Given('I am on the home page', () => {
+  cy.visit('/');
+});
+
+When('I click the {string} button', (buttonText) => {
+  cy.contains('button', buttonText).click();
+});
+
+Then('I should see the welcome message', () => {
+  cy.shouldBeVisible('[data-cy="welcome-message"]');
 });
 ```
 
-### Environment-Specific Overrides
-Create environment-specific configuration files:
-- `cypress.dev.config.js`
-- `cypress.qa.config.js`
-- `cypress.uat.config.js`
+### 3. Run Your Test
+```bash
+# Run your specific feature
+node scripts/run-tagged-tests.js --spec "cypress/e2e/features/my-feature.feature"
 
-### Plugin Configuration
-Configure additional Cypress plugins in `cypress.config.js`:
-```javascript
-module.exports = defineConfig({
-  e2e: {
-    setupNodeEvents(on, config) {
-      // Add your plugins here
-    },
-  },
-});
+# Or run by tag
+node scripts/run-tagged-tests.js --tags "@smoke"
 ```
 
-## 📚 Next Steps
-
-1. **Read the Usage Guide**: [USAGE.md](USAGE.md)
-2. **Review Best Practices**: [BEST_PRACTICES.md](BEST_PRACTICES.md)
-3. **Check API Reference**: [API_REFERENCE.md](API_REFERENCE.md)
-4. **Explore Examples**: Look at the example tests in `cypress/e2e/features/examples/`
-
-## 🆘 Getting Help
-
-- **Documentation**: Check the `docs/` folder for detailed guides
-- **Examples**: Review example tests for implementation patterns
-- **Issues**: Create an issue in the repository for bugs or feature requests
-- **Community**: Join the team Slack channel for questions and discussions
-
-## 📝 Validation Checklist
+## ✅ Validation Checklist
 
 After setup, verify everything is working:
 
-- [ ] Node.js and npm are installed and working
+- [ ] Node.js and npm are installed
 - [ ] Cypress opens successfully with `npm run cy:open`
-- [ ] Environment configuration files are properly set up
-- [ ] Database connection works (if using database features)
-- [ ] Sample tests run successfully
-- [ ] Reports are generated correctly
-- [ ] CI/CD pipeline is configured (if applicable)
+- [ ] Environment configuration files are set up
+- [ ] Sample tests run successfully with `npm run test:smoke`
+- [ ] Reports are generated with `npm run report:generate`
+- [ ] Jenkins pipeline works (if using CI/CD)
 
-Congratulations! Your E2E automation framework is now set up and ready to use. 🎉
+## 🆘 Getting Help
+
+- **Documentation**: Check the `docs/` folder
+- **Examples**: Review example tests in `cypress/e2e/features/examples/`
+- **Issues**: Create an issue in the repository
+- **Community**: Join the team Slack channel
+
+Congratulations! Your simple E2E automation framework is now set up and ready to use. 🎉
 

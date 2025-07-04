@@ -1,215 +1,298 @@
-# E2E Automation Testing Framework
+# 🚀 Simple E2E Automation Framework
 
-A comprehensive end-to-end automation testing framework built with **Cypress**, **Cucumber**, and **Jenkins** for robust CI/CD integration.
+A streamlined end-to-end testing framework using **Cypress**, **Cucumber**, and **Mochawesome** reporting.
 
-## 🚀 Features
+## ✨ Features
 
-- **BDD Testing**: Cucumber integration for behavior-driven development
-- **Multi-Environment Support**: Dev, QA, UAT environment configurations
-- **Test Tagging**: Selective test execution with comprehensive tagging system
-- **Data-Driven Testing**: Support for JSON, CSV, and database-driven tests
-- **Comprehensive Reporting**: HTML, JSON, and JUnit XML reports with merging capabilities
-- **CI/CD Integration**: Jenkins pipeline with parameterized builds
-- **Page Object Model**: Clean separation of concerns with reusable components
-- **Parallel Execution**: Support for parallel test execution
-- **Docker Support**: Containerized test execution
-- **API Testing**: Built-in API testing capabilities
-- **Database Integration**: MySQL and PostgreSQL support
+- 🧪 **Cypress + Cucumber** - BDD testing with Gherkin syntax
+- 🏷️ **Test Tagging** - Organize and run specific test groups
+- 🌍 **Multi-Environment Support** - dev, qa, uat configurations
+- 📊 **Mochawesome Reporting** - Beautiful HTML reports with screenshots
+- 🔄 **Jenkins CI/CD** - Ready-to-use pipeline configuration
+- 🏗️ **Page Object Model** - Maintainable test structure
+- 📱 **Mobile Testing** - Responsive design testing
 
-## 📁 Project Structure
+## 🚀 Quick Start
 
-```
-├── cypress/
-│   ├── e2e/
-│   │   └── features/           # Gherkin feature files
-│   ├── fixtures/               # Test data files
-│   ├── support/
-│   │   ├── pages/             # Page Object Model
-│   │   ├── step_definitions/  # Cucumber step definitions
-│   │   ├── utilities/         # Helper functions and utilities
-│   │   ├── commands.js        # Custom Cypress commands
-│   │   └── e2e.js            # Support file
-├── config/                    # Environment configurations
-├── scripts/                   # Utility scripts
-├── jenkins/                   # Jenkins pipeline scripts
-├── docker/                    # Docker configuration
-├── docs/                      # Documentation
-└── reports/                   # Generated reports
-```
-
-## 🛠️ Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd e2e-automation-framework
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-## 🎯 Usage
-
-### Running Tests
-
+### Installation
 ```bash
-# Open Cypress Test Runner
+git clone <repository-url>
+cd simple-e2e-framework
+npm install
+```
+
+### Run Tests
+```bash
+# Interactive mode
 npm run cy:open
 
-# Run all tests headlessly
+# Headless mode
 npm run cy:run
 
-# Run tests by tags
-npm run test:smoke      # Smoke tests
-npm run test:regression # Regression tests
-npm run test:api        # API tests
-npm run test:ui         # UI tests
+# Run specific test groups
+npm run test:smoke
+npm run test:regression
+npm run test:ui
 
-# Run tests by environment
-npm run test:dev        # Development environment
-npm run test:qa         # QA environment
-npm run test:uat        # UAT environment
-
-# Run tests in different browsers
-npm run cy:run:chrome
-npm run cy:run:firefox
-npm run cy:run:edge
+# Run with automatic report opening
+npm run test:smoke:report
+npm run test:regression:report
+npm run test:ui:report
 ```
 
-### Test Tagging
-
-Use Cucumber tags to organize and execute specific test suites:
-
-```gherkin
-@smoke @ui
-Feature: User Login
-  As a user
-  I want to login to the application
-  So that I can access my account
-
-  @critical
-  Scenario: Successful login with valid credentials
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should be logged in successfully
-```
-
-### Data-Driven Testing
-
-```gherkin
-@regression @data-driven
-Feature: User Registration
-  
-  Scenario Outline: Register user with different data sets
-    Given I am on the registration page
-    When I register with "<username>", "<email>", and "<password>"
-    Then I should see "<expected_result>"
-    
-    Examples:
-      | username | email           | password | expected_result |
-      | user1    | user1@test.com  | Pass123! | Success         |
-      | user2    | invalid-email   | weak     | Error           |
+### Environment-Specific Testing
+```bash
+npm run test:dev
+npm run test:qa
+npm run test:uat
 ```
 
 ## 📊 Reporting
 
-The framework generates multiple report formats:
+This framework uses **Mochawesome** for clean, professional HTML reports with embedded screenshots and videos.
 
-- **HTML Reports**: Interactive HTML reports with screenshots
-- **JSON Reports**: Machine-readable JSON format
-- **JUnit XML**: For CI/CD integration
-- **Cucumber Reports**: BDD-specific reporting
-
+### Generate Reports
 ```bash
-# Generate and merge reports
+# After running tests, generate merged report
 npm run report:merge
 npm run report:generate
 
-# Open HTML report
+# Or do both in one command
+npm run report:full
+
+# Open the report
 npm run report:open
 ```
 
-## 🔧 Configuration
+### Report Features
+- ✅ **Embedded Screenshots** - Failures automatically captured
+- 🎥 **Video Integration** - Test execution videos included
+- 📊 **Test Statistics** - Pass/fail rates and timing
+- 🎨 **Professional Design** - Clean, readable HTML reports
+- 📱 **Mobile Responsive** - View reports on any device
 
-### Environment Configuration
+### Report Location
+- **HTML Report**: `reports/html/mochawesome.html`
+- **JSON Data**: `reports/temp/*.json`
+- **Screenshots**: `cypress/screenshots/`
+- **Videos**: `cypress/videos/`
 
-Create environment-specific configuration files in the `config/` directory:
+## 🏷️ Test Tagging
 
+Organize your tests with tags:
+
+```gherkin
+@smoke @ui
+Feature: Login functionality
+
+@regression @critical
+Scenario: Valid user login
+  Given I am on the login page
+  When I enter valid credentials
+  Then I should be logged in successfully
+```
+
+### Available Tags
+- `@smoke` - Quick smoke tests
+- `@regression` - Full regression suite
+- `@ui` - UI-focused tests
+- `@critical` - Critical path tests
+- `@mobile` - Mobile-specific tests
+
+### Run Tagged Tests
+```bash
+cypress run --env tags='@smoke'
+cypress run --env tags='@regression'
+cypress run --env tags='@ui and @critical'
+```
+
+## 🌍 Environment Configuration
+
+Configure different environments in the `config/` directory:
+
+### config/dev.json
 ```json
 {
   "baseUrl": "https://dev.example.com",
-  "apiUrl": "https://api-dev.example.com",
-  "database": {
-    "host": "dev-db.example.com",
-    "port": 5432,
-    "database": "testdb"
-  },
+  "timeout": 10000,
   "users": {
-    "admin": {
-      "username": "admin",
-      "password": "admin123"
+    "testUser": {
+      "username": "dev_user",
+      "password": "dev_password"
     }
   }
 }
 ```
 
-### Cypress Configuration
-
-The framework uses `cypress.config.js` for Cypress-specific settings and Cucumber integration.
-
-## 🐳 Docker Support
-
-```bash
-# Build Docker image
-npm run docker:build
-
-# Run tests in Docker container
-npm run docker:run
+### config/qa.json
+```json
+{
+  "baseUrl": "https://qa.example.com",
+  "timeout": 15000,
+  "users": {
+    "testUser": {
+      "username": "qa_user",
+      "password": "qa_password"
+    }
+  }
+}
 ```
 
-## 🔄 Jenkins Integration
+## 📁 Project Structure
 
-The framework includes a comprehensive Jenkins pipeline (`Jenkinsfile`) with:
+```
+├── cypress/
+│   ├── e2e/features/           # Feature files (.feature)
+│   ├── support/
+│   │   ├── pages/              # Page Object Model classes
+│   │   ├── step_definitions/   # Step implementations
+│   │   ├── utilities/          # Helper utilities
+│   │   ├── commands.js         # Custom Cypress commands
+│   │   └── e2e.js             # Support file
+├── config/                     # Environment configurations
+├── reports/                    # Generated reports
+├── scripts/                    # Utility scripts
+├── docs/                       # Documentation
+├── cypress.config.js          # Cypress configuration
+├── package.json               # Dependencies and scripts
+└── README.md                  # This file
+```
 
-- Parameterized builds
-- Multi-environment support
-- Parallel execution
-- Report archival
-- Slack notifications
+## 🧪 Writing Tests
 
-### Pipeline Parameters
+### Feature File Example
+```gherkin
+@smoke @ui
+Feature: User Authentication
 
-- **ENVIRONMENT**: Target environment (dev/qa/uat)
-- **TAGS**: Test tags to execute
-- **BROWSER**: Browser selection
-- **PARALLEL**: Enable parallel execution
+  Background:
+    Given I am on the login page
+
+  @critical
+  Scenario: Successful login with valid credentials
+    When I enter username "testuser" and password "password123"
+    And I click the login button
+    Then I should see the dashboard
+    And I should see welcome message "Welcome, testuser"
+
+  @negative
+  Scenario: Failed login with invalid credentials
+    When I enter username "invalid" and password "wrong"
+    And I click the login button
+    Then I should see error message "Invalid credentials"
+```
+
+### Step Definition Example
+```javascript
+import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
+import LoginPage from '../pages/LoginPage';
+
+const loginPage = new LoginPage();
+
+Given('I am on the login page', () => {
+  loginPage.visit();
+});
+
+When('I enter username {string} and password {string}', (username, password) => {
+  loginPage.enterCredentials(username, password);
+});
+
+When('I click the login button', () => {
+  loginPage.clickLogin();
+});
+
+Then('I should see the dashboard', () => {
+  cy.url().should('include', '/dashboard');
+});
+```
+
+### Page Object Example
+```javascript
+class LoginPage {
+  visit() {
+    cy.visit('/login');
+  }
+
+  enterCredentials(username, password) {
+    cy.get('[data-cy=username]').type(username);
+    cy.get('[data-cy=password]').type(password);
+  }
+
+  clickLogin() {
+    cy.get('[data-cy=login-button]').click();
+  }
+}
+
+export default LoginPage;
+```
+
+## 🔄 CI/CD Integration
+
+### Jenkins Pipeline
+The framework includes a `Jenkinsfile` for easy CI/CD integration:
+
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                sh 'npm run test:smoke'
+            }
+        }
+        
+        stage('Generate Reports') {
+            steps {
+                sh 'npm run report:full'
+            }
+        }
+        
+        stage('Archive Reports') {
+            steps {
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'reports/html',
+                    reportFiles: 'mochawesome.html',
+                    reportName: 'E2E Test Report'
+                ])
+            }
+        }
+    }
+}
+```
+
+## 🛠️ Custom Commands
+
+The framework includes useful custom Cypress commands:
+
+```javascript
+// Set mobile viewport
+cy.setMobileViewport();
+
+// Take screenshot with custom name
+cy.takeScreenshot('custom-name');
+
+// Wait for element with custom timeout
+cy.waitForElement('[data-cy=element]', 15000);
+
+// Login with test user
+cy.loginAsTestUser();
+```
 
 ## 📚 Documentation
 
-Detailed documentation is available in the `docs/` directory:
-
-- [Setup Guide](docs/SETUP.md)
-- [Usage Guide](docs/USAGE.md)
-- [Best Practices](docs/BEST_PRACTICES.md)
-- [API Reference](docs/API_REFERENCE.md)
-
-## 🧪 Example Tests
-
-The framework includes example tests demonstrating:
-
-- UI automation with Page Object Model
-- API testing with data validation
-- Database integration
-- Multi-environment testing
-- Data-driven scenarios
+- [Setup Guide](docs/SETUP.md) - Detailed setup instructions
+- [Usage Guide](docs/USAGE.md) - Comprehensive usage examples
+- [Best Practices](docs/BEST_PRACTICES.md) - Testing best practices
 
 ## 🤝 Contributing
 
@@ -217,22 +300,21 @@ The framework includes example tests demonstrating:
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Run the test suite
+5. Ensure all tests pass
 6. Submit a pull request
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🆘 Support
 
 For questions and support:
-
+- Check the [documentation](docs/)
 - Create an issue in the repository
-- Check the documentation in the `docs/` folder
-- Review example tests for implementation patterns
+- Contact the E2E Automation Team
 
-## 🔄 Changelog
+---
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
+**Happy Testing! 🧪✨**
 
