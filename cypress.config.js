@@ -35,6 +35,16 @@ module.exports = defineConfig({
       tags: '@smoke'
     },
     
+    // Reporter configuration for better reporting
+    reporter: 'cypress-mochawesome-reporter',
+    reporterOptions: {
+      reportDir: 'reports/temp',
+      overwrite: false,
+      html: false,
+      json: true,
+      timestamp: 'mmddyyyy_HHMMss'
+    },
+    
     async setupNodeEvents(on, config) {
       // Cucumber preprocessor
       await addCucumberPreprocessorPlugin(on, config);
@@ -45,6 +55,9 @@ module.exports = defineConfig({
           plugins: [createEsbuildPlugin(config)],
         })
       );
+
+      // Mochawesome reporter plugin
+      require('cypress-mochawesome-reporter/plugin')(on);
 
       // Task for logging
       on('task', {
