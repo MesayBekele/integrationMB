@@ -4,24 +4,7 @@ import 'cypress-mochawesome-reporter/register';
 // Import commands.js using ES2015 syntax:
 import './commands';
 import './commands/screenshot-commands'; // Base64 encoding error prevention
-
-// Global error handling
-Cypress.on('uncaught:exception', (err, runnable) => {
-  // Handle Base64 encoding errors specifically
-  if (err.message && err.message.includes('Length must be a multiple of 4')) {
-    console.warn('Base64 encoding error detected and handled:', err.message);
-    return false; // Prevent test failure
-  }
-  
-  if (err.message && err.message.includes('invalid string')) {
-    console.warn('String encoding error detected and handled:', err.message);
-    return false; // Prevent test failure
-  }
-  
-  // Returning false here prevents Cypress from failing the test
-  console.log('Uncaught exception:', err.message);
-  return false;
-});
+import './error-handling'; // Comprehensive error handling system
 
 // Before each test
 beforeEach(() => {
