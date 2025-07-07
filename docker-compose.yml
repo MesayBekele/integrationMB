@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # Main Cypress testing service
+  cypress:
+    build:
+      context: .
+      target: production
+    container_name: cypress-e2e
+    volumes:
+      - ./reports:/app/reports
+      - ./cypress/screenshots:/app/cypress/screenshots
+      - ./cypress/videos:/app/cypress/videos
+    environment:
+      - CYPRESS_ENV=${CYPRESS_ENV:-dev}
+      - DISPLAY=:99
+    networks:
+      - test-network
+    depends_on:
+      - app-server
+    command: npm run test:headless
+
+  # Development service with hot reload
+  cypress-dev:
+    build:
+      context: .
+      target: development
+    container_name: cypress-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./reports:/app/reports
+    environment:
+      - CYPRESS_ENV=dev
+      - NODE_ENV=development
+    ports:
+      - "8080:8080"
+    networks:
+      - test-network
+    command: npm run test:dev
+
+  # CI service for automated testing
+  cypress-ci:
+    build:
+      context: .
+      target: ci
+    container_name: cypress-ci
+    volumes:
+      - ./reports:/app/reports
+      - ./cypress/screenshots:/app/cypress/screenshots
+      - ./cypress/videos:/app/cypress/videos
+    environment:
+      - CI=true
+      - CYPRESS_ENV=${CYPRESS_ENV:-qa}
+      - CYPRESS_RECORD_KEY=${CYPRESS_RECORD_KEY}
+    networks:
+      - test-network
+    depends_on:
+      - app-server
+    command: npm run test:ci
+
+  # Mock application server for testing
+  app-server:
+    image: nginx:alpine
+    container_name: mock-app-server
+    ports:
+      - "3000:80"
+    volumes:
+      - ./mock-server:/usr/share/nginx/html
+    networks:
+      - test-network
+
+  # Report server for viewing test results
+  report-server:
+    image: nginx:alpine
+    container_name: report-server
+    ports:
+      - "8081:80"
+    volumes:
+      - ./reports/html:/usr/share/nginx/html
+    networks:
+      - test-network
+
+  # Database for testing (optional)
+  test-db:
+    image: postgres:13
+    container_name: test-database
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - test-db-data:/var/lib/postgresql/data
+    networks:
+      - test-network
+
+  # Redis for session management (optional)
+  redis:
+    image: redis:alpine
+    container_name: test-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - test-network
+
+volumes:
+  test-db-data:
+
+networks:
+  test-network:
+    driver: bridge
+

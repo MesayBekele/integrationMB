@@ -1,0 +1,193 @@
+name: Cypress E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test against'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - qa
+        - uat
+      tags:
+        description: 'Cucumber tags to run (e.g., @smoke, @regression)'
+        required: false
+        default: '@smoke'
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2, 3, 4]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Set environment variables
+      run: |
+        echo "CYPRESS_ENV=${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_ENV
+        echo "CUCUMBER_TAGS=${{ github.event.inputs.tags || '@smoke' }}" >> $GITHUB_ENV
+
+    - name: Create reports directory
+      run: mkdir -p reports/json reports/html
+
+    - name: Run Cypress tests
+      uses: cypress-io/github-action@v6
+      with:
+        install: false
+        start: npm run start:test-server
+        wait-on: 'http://localhost:3000'
+        wait-on-timeout: 120
+        browser: chrome
+        record: true
+        parallel: true
+        group: 'E2E Tests'
+        tag: ${{ github.event.inputs.environment || 'dev' }}
+      env:
+        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CYPRESS_ENV: ${{ github.event.inputs.environment || 'dev' }}
+
+    - name: Generate test report
+      if: always()
+      run: |
+        npm run report:merge
+        npm run report:generate
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-results-${{ matrix.containers }}
+        path: |
+          reports/
+          cypress/screenshots/
+          cypress/videos/
+        retention-days: 30
+
+    - name: Upload coverage to Codecov
+      if: always()
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: e2e
+        name: e2e-coverage
+
+  merge-reports:
+    needs: cypress-run
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Merge all reports
+      run: |
+        mkdir -p reports/json reports/html
+        find artifacts -name "*.json" -exec cp {} reports/json/ \;
+        npm run report:merge
+        npm run report:generate
+
+    - name: Deploy report to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./reports/html
+        destination_dir: test-reports
+
+    - name: Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = './reports/json/cucumber-report.json';
+          
+          if (fs.existsSync(path)) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            let totalScenarios = 0;
+            let passedScenarios = 0;
+            
+            report.forEach(feature => {
+              feature.elements.forEach(scenario => {
+                totalScenarios++;
+                if (scenario.steps.every(step => step.result.status === 'passed')) {
+                  passedScenarios++;
+                }
+              });
+            });
+            
+            const body = `## 🧪 Test Results
+            
+            - **Total Scenarios**: ${totalScenarios}
+            - **Passed**: ${passedScenarios}
+            - **Failed**: ${totalScenarios - passedScenarios}
+            - **Success Rate**: ${Math.round((passedScenarios / totalScenarios) * 100)}%
+            
+            📊 [View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          }
+
+  notify-slack:
+    needs: [cypress-run, merge-reports]
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#qa-automation'
+        text: |
+          E2E Test Results for ${{ github.repository }}
+          Environment: ${{ github.event.inputs.environment || 'dev' }}
+          Status: ${{ job.status }}
+          Commit: ${{ github.sha }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+

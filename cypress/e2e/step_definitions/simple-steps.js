@@ -1,16 +1,18 @@
 const { Given, When, Then } = require('@badeball/cypress-cucumber-preprocessor');
 
+console.log('🔍 STEP DEFINITIONS FILE LOADED!');
+
 Given('I have a simple test', () => {
-  // Just pass without any Cypress commands
   console.log('✅ Simple test step executed');
+  cy.log('✅ Simple test step executed');
 });
 
 When('I run the test', () => {
-  // Just pass without any Cypress commands
   console.log('✅ Test execution step completed');
+  cy.log('✅ Test execution step completed');
 });
 
 Then('it should pass', () => {
-  // Just pass without any Cypress commands
   console.log('✅ Test assertion passed');
+  cy.log('✅ Test assertion passed');
 });
