@@ -1,6 +1,9 @@
 /**
  * Data-Driven Testing Utilities
- * Provides functionality for parameterized testing without Cucumber
+ * Provides functionality for parameterized testing in standard Cypress tests
+ * 
+ * Note: For BDD testing with native @tag support, use Cucumber .feature files
+ * This utility is for data-driven testing in .cy.js files
  */
 
 /**
@@ -8,17 +11,11 @@
  * @param {string} testTitle - Base test title
  * @param {Array} dataSet - Array of test data objects
  * @param {Function} testFn - Test function that receives data as parameter
- * @param {string[]} tags - Optional tags for the test
  */
-function testWithData(testTitle, dataSet, testFn, tags = []) {
+function testWithData(testTitle, dataSet, testFn) {
   dataSet.forEach((data, index) => {
     const title = `${testTitle} - Dataset ${index + 1}: ${data.description || JSON.stringify(data)}`;
-    
-    if (tags.length > 0) {
-      taggedTest(title, tags, () => testFn(data));
-    } else {
-      it(title, () => testFn(data));
-    }
+    it(title, () => testFn(data));
   });
 }
 
@@ -27,17 +24,11 @@ function testWithData(testTitle, dataSet, testFn, tags = []) {
  * @param {string} suiteTitle - Base suite title
  * @param {Array} dataSet - Array of test data objects
  * @param {Function} suiteFn - Suite function that receives data as parameter
- * @param {string[]} tags - Optional tags for the suite
  */
-function describeWithData(suiteTitle, dataSet, suiteFn, tags = []) {
+function describeWithData(suiteTitle, dataSet, suiteFn) {
   dataSet.forEach((data, index) => {
     const title = `${suiteTitle} - Dataset ${index + 1}: ${data.description || JSON.stringify(data)}`;
-    
-    if (tags.length > 0) {
-      taggedDescribe(title, tags, () => suiteFn(data));
-    } else {
-      describe(title, () => suiteFn(data));
-    }
+    describe(title, () => suiteFn(data));
   });
 }
 
@@ -96,9 +87,8 @@ function generateCombinations(dataMatrix) {
  * @param {string} testTitle - Base test title
  * @param {string} csvData - CSV string data
  * @param {Function} testFn - Test function
- * @param {string[]} tags - Optional tags
  */
-function testWithCSV(testTitle, csvData, testFn, tags = []) {
+function testWithCSV(testTitle, csvData, testFn) {
   const lines = csvData.trim().split('\n');
   const headers = lines[0].split(',').map(h => h.trim());
   const dataRows = lines.slice(1);
@@ -113,7 +103,7 @@ function testWithCSV(testTitle, csvData, testFn, tags = []) {
     return dataObj;
   });
   
-  testWithData(testTitle, dataSet, testFn, tags);
+  testWithData(testTitle, dataSet, testFn);
 }
 
 /**
@@ -168,4 +158,3 @@ global.loadFixture = loadFixture;
 global.generateCombinations = generateCombinations;
 global.testWithCSV = testWithCSV;
 global.DataPatterns = DataPatterns;
-

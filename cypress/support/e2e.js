@@ -7,7 +7,6 @@
 import './commands';
 
 // Import framework utilities (for non-Cucumber tests)
-require('./tagging');
 require('./data-driven');
 
 // Global configuration
@@ -30,9 +29,9 @@ Cypress.Commands.add('loadTestData', (filename) => {
   return cy.task('loadTestData', filename);
 });
 
-// Add command for tagging support (for non-Cucumber tests)
-Cypress.Commands.add('addTestTags', (tags) => {
-  cy.task('log', `Test tags: ${tags.join(', ')}`);
+// Add command for logging test information
+Cypress.Commands.add('logTestInfo', (info) => {
+  cy.task('log', `Test info: ${info}`);
 });
 
 // Add command for setting test metadata
@@ -70,8 +69,8 @@ beforeEach(() => {
   cy.task('log', `🌍 Environment: ${environment}`);
   
   // Add test metadata for reporting
-  if (Cypress.currentTest?.tags) {
-    cy.addTestTags(Cypress.currentTest.tags);
+  if (Cypress.currentTest?.title) {
+    cy.logTestInfo(`Test: ${Cypress.currentTest.title}`);
   }
 });
 
@@ -114,7 +113,7 @@ before(() => {
 console.log('🚀 Cypress 11 + Cucumber + Mochawesome Framework Initialized');
 console.log(`📊 Reporter: Mochawesome with merge support`);
 console.log(`🥒 Cucumber: @badeball/cypress-cucumber-preprocessor 15.1.5`);
-console.log(`🏷️  Tagging: Cucumber tags + Custom tagging system`);
+console.log(`🏷️  Tagging: Native Cucumber @tags`);
 console.log(`📈 Data-driven: Cucumber scenario outlines + Parameterized testing`);
 console.log(`🌍 Environment: ${Cypress.env('ENVIRONMENT') || 'dev'}`);
 
@@ -127,10 +126,9 @@ window.frameworkInfo = {
   reporter: 'Mochawesome 7.1.3',
   features: [
     'Cucumber BDD with Data-Driven Testing',
-    'Custom Tagging System', 
+    'Native Cucumber @tag Support', 
     'Multi-Environment Support', 
     'Mochawesome Report Merging',
     'Hybrid Test Architecture'
   ]
 };
-

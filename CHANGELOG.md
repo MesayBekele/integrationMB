@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🚀 Core Framework
 - **Cypress + Cucumber Integration**: Complete BDD testing framework with Gherkin syntax support
 - **Multi-Environment Support**: Configuration system for dev, qa, and uat environments
-- **Test Tagging System**: Comprehensive tagging for selective test execution (@smoke, @regression, @ui, etc.)
+- **Native Cucumber Tagging**: Standard @tag support for selective test execution (@smoke, @regression, @ui, etc.)
 - **Page Object Model**: Robust POM implementation with BasePage and specific page classes
 - **Custom Commands**: Extensive library of reusable Cypress commands
 
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Best Practices**: Testing best practices and guidelines
 - **Example Tests**: Working examples for login, form validation, and more
 
-#### 🏷️ Tagging System
+#### 🏷️ Native Cucumber Tagging
 - **Test Types**: @smoke, @regression, @sanity, @integration, @e2e
 - **Components**: @ui, @mobile, @desktop
 - **Priorities**: @critical, @high, @medium, @low

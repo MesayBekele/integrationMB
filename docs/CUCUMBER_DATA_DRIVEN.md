@@ -254,8 +254,8 @@ cypress/
 └── support/
     ├── e2e.js                   # Support file
     ├── commands.js              # Custom commands
-    ├── tagging.js               # Custom tagging (for .cy.js)
-    └── data-driven.js           # Data-driven utilities (for .cy.js)
+    ├── data-driven.js           # Data-driven utilities
+    └── pages/                   # Page object models
 ```
 
 ## 🎨 Best Practices

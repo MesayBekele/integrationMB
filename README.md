@@ -244,6 +244,8 @@ cypress/e2e/features/
 
 ### Tagging Strategy
 
+The framework uses **native Cucumber `@` tags** for test organization and filtering:
+
 | Tag | Purpose | When to Use |
 |-----|---------|-------------|
 | `@smoke` | Critical functionality | Every deployment |
@@ -251,6 +253,37 @@ cypress/e2e/features/
 | `@ui` | User interface testing | Frontend changes |
 | `@critical` | Business-critical flows | High-priority testing |
 | `@data-driven` | Data-driven scenarios | Data validation |
+
+#### Tag Usage Examples:
+```gherkin
+@smoke @critical @ui
+Feature: User Login
+  
+  @positive @user-journey
+  Scenario: Successful login
+    Given I am on the login page
+    When I enter valid credentials
+    Then I should be logged in
+
+  @negative @validation
+  Scenario: Invalid login attempt
+    Given I am on the login page
+    When I enter invalid credentials
+    Then I should see an error message
+```
+
+#### Running Tests by Tags:
+```bash
+# Run specific tags
+npm run test:smoke
+npm run test:regression
+npm run test:ui
+
+# Run with custom tag combinations
+cypress run --env CUCUMBER_TAGS='@smoke and @ui'
+cypress run --env CUCUMBER_TAGS='@regression and not @slow'
+cypress run --env CUCUMBER_TAGS='@critical or @smoke'
+```
 
 ### Data-Driven Testing
 
