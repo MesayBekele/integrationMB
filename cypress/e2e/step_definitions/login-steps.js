@@ -1,4 +1,4 @@
-import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
+const { Given, When, Then } = require('@badeball/cypress-cucumber-preprocessor');
 
 // Background steps
 Given('I am on the login page', () => {

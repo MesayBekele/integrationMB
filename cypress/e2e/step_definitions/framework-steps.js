@@ -1,4 +1,4 @@
-import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
+const { Given, When, Then } = require('@badeball/cypress-cucumber-preprocessor');
 
 Given('the framework is properly initialized', () => {
   // Visit a test page to initialize the framework

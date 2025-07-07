@@ -1,4 +1,4 @@
-import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
+const { Given, When, Then } = require('@badeball/cypress-cucumber-preprocessor');
 
 Given('I can run a simple test', () => {
   // Visit a simple data URL instead of about:blank to avoid protocol errors
