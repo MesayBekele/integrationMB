@@ -30,7 +30,7 @@ on:
         - cypress
         - smoke
         - regression
-        - api
+        - ui
       tags:
         description: 'Cucumber tags to run (e.g., @smoke, @regression)'
         required: false
@@ -84,8 +84,8 @@ jobs:
           "regression")
             npm run test:regression
             ;;
-          "api")
-            npm run test:api
+          "ui")
+            npm run test:ui
             ;;
           *)
             npm run cy:run

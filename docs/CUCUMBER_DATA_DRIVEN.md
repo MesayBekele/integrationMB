@@ -68,19 +68,20 @@ Scenario Outline: Login with different user types
     | user     | User123!     | user         |
 ```
 
-### 2. API Testing with Multiple Endpoints
+### 2. Form Validation Testing
 
 ```gherkin
-Scenario Outline: API authentication across environments
-  When I send a POST request to "<endpoint>" with valid credentials
-  Then the response status should be <expectedStatus>
-  And the response time should be under <maxTime> seconds
+Scenario Outline: Form validation with different input types
+  Given I am on the registration page
+  When I enter "<fieldType>" with value "<value>"
+  Then the validation should "<expectedResult>"
 
   Examples:
-    | endpoint     | expectedStatus | maxTime |
-    | /auth/login  | 200           | 2       |
-    | /auth/verify | 200           | 1       |
-    | /auth/refresh| 200           | 1       |
+    | fieldType | value              | expectedResult |
+    | email     | test@example.com   | pass          |
+    | email     | invalid-email      | fail          |
+    | phone     | +1-555-123-4567   | pass          |
+    | phone     | invalid-phone     | fail          |
 ```
 
 ### 3. Cross-Browser Testing
@@ -137,9 +138,9 @@ When('I send a POST request to {string} with:', (endpoint, dataTable) => {
   const requestData = dataTable.rowsHash();
   cy.request({
     method: 'POST',
-    url: `${Cypress.env('API_BASE_URL')}${endpoint}`,
+    url: `${Cypress.env('baseUrl')}${endpoint}`,
     body: requestData
-  }).as('apiResponse');
+  }).as('formResponse');
 });
 ```
 
@@ -167,7 +168,7 @@ npm run test:features
 npm run test:smoke              # All smoke tests
 npm run test:data-driven        # All data-driven tests
 npm run test:cucumber:smoke     # Only Cucumber smoke tests
-npm run test:cucumber:api       # Only Cucumber API tests
+npm run test:cucumber:ui        # Only Cucumber UI tests
 ```
 
 ### Run by Environment
@@ -242,15 +243,12 @@ cypress/
 ├── e2e/
 │   ├── features/                 # Cucumber feature files
 │   │   ├── data-driven/         # Data-driven scenarios
-│   │   ├── smoke/               # Smoke test features
-│   │   └── api/                 # API test features
+│   │   └── smoke/               # Smoke test features
 │   ├── step_definitions/        # Step definitions
 │   │   ├── common/              # Common steps
-│   │   ├── ui/                  # UI-specific steps
-│   │   └── api/                 # API-specific steps
+│   │   └── ui/                  # UI-specific steps
 │   ├── smoke/                   # Regular Cypress tests
-│   ├── regression/              # Regular Cypress tests
-│   └── api/                     # Regular Cypress tests
+│   └── regression/              # Regular Cypress tests
 ├── fixtures/
 │   └── test-data/               # Test data files
 └── support/
@@ -278,7 +276,7 @@ cypress/
 
 - Create reusable step definitions
 - Use parameterized steps for flexibility
-- Organize steps by domain (UI, API, common)
+- Organize steps by domain (UI, forms, common)
 
 ### 4. Tag Strategy
 
@@ -335,4 +333,3 @@ Scenario Outline: Performance testing with load
 ```
 
 This hybrid approach gives you the best of both worlds: Cucumber's excellent data-driven capabilities with Cypress's robust testing framework and Mochawesome's comprehensive reporting.
-

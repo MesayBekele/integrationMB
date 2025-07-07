@@ -42,8 +42,6 @@ Feature: Critical User Paths - Data Driven Smoke Tests
     When I access the application
     Then the environment should be properly configured
     And the base URL should be "<expectedUrl>"
-    And the API endpoints should be accessible
-    And the database connection should be active
 
     Examples:
       | environment | expectedUrl                    |
@@ -70,4 +68,3 @@ Feature: Critical User Paths - Data Driven Smoke Tests
       | date      | invalid-date            | reject           | invalid   |
       | number    | 12345                   | accept           | valid     |
       | number    | not-a-number            | reject           | invalid   |
-

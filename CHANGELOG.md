@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🚀 Core Framework
 - **Cypress + Cucumber Integration**: Complete BDD testing framework with Gherkin syntax support
 - **Multi-Environment Support**: Configuration system for dev, qa, and uat environments
-- **Test Tagging System**: Comprehensive tagging for selective test execution (@smoke, @regression, @api, @ui, etc.)
+- **Test Tagging System**: Comprehensive tagging for selective test execution (@smoke, @regression, @ui, etc.)
 - **Page Object Model**: Robust POM implementation with BasePage and specific page classes
 - **Custom Commands**: Extensive library of reusable Cypress commands
 
@@ -24,8 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### 🧪 Testing Capabilities
 - **Data-Driven Testing**: Support for JSON, CSV, and database-driven test scenarios
-- **API Testing**: Comprehensive API testing utilities with authentication and validation
-- **Database Testing**: MySQL and PostgreSQL integration for database operations
+- **Form Validation Testing**: Comprehensive form validation utilities with input validation
 - **Mobile Testing**: Responsive design testing with mobile viewport simulation
 - **Performance Testing**: Built-in performance monitoring and measurement tools
 
@@ -45,21 +44,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### 🛠️ Utilities & Helpers
 - **Tag Manager**: Advanced test organization and filtering system
-- **API Helper**: Comprehensive API testing and validation utilities
-- **Database Helper**: Database operations and test data management
+- **UI Helper**: Comprehensive UI testing and validation utilities
 - **Test Data Generator**: Dynamic test data generation for various scenarios
 - **Report Manager**: Advanced reporting and notification system
 
 #### 📚 Documentation
 - **Setup Guide**: Comprehensive setup and installation instructions
 - **Usage Guide**: Detailed usage documentation with examples
-- **API Reference**: Complete API documentation for all utilities
+- **UI Reference**: Complete UI testing documentation for all utilities
 - **Best Practices**: Testing best practices and guidelines
-- **Example Tests**: Working examples for login, API testing, and more
+- **Example Tests**: Working examples for login, form validation, and more
 
 #### 🏷️ Tagging System
 - **Test Types**: @smoke, @regression, @sanity, @integration, @e2e
-- **Components**: @ui, @api, @database, @mobile, @desktop
+- **Components**: @ui, @mobile, @desktop
 - **Priorities**: @critical, @high, @medium, @low
 - **Features**: @login, @registration, @checkout, @payment, @profile
 - **Status**: @wip, @ready, @blocked, @skip
@@ -73,15 +71,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### 🔐 Security & Quality
 - **Authentication Testing**: Comprehensive login and session management tests
-- **API Security Testing**: Authentication, authorization, and rate limiting tests
+- **UI Security Testing**: Input validation, XSS prevention, and security testing
 - **Input Validation**: Form validation and error handling tests
 - **Session Management**: Session timeout and security testing
 
 #### 🌐 Integration Features
 - **Slack Notifications**: Automated test result notifications
 - **JIRA Integration**: Test result tracking and issue management
-- **Database Connectivity**: Multi-database support with connection pooling
-- **External API Integration**: Third-party API testing capabilities
+- **External Service Integration**: Third-party service testing capabilities
 
 ### Technical Details
 
@@ -120,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Example Tests Included
 - **Login Functionality**: Complete login flow with various scenarios
-- **API Testing**: RESTful API testing with authentication
+- **Form Testing**: Comprehensive form testing with validation
 - **Data-Driven Tests**: Parameterized tests with multiple data sets
 - **Error Handling**: Negative testing and error validation
 - **Mobile Responsive**: Mobile-specific testing scenarios
@@ -164,8 +161,8 @@ npm run test:smoke
 # Run regression tests in QA environment
 npm run test:qa -- --env tags="@regression"
 
-# Run API tests with Firefox
-npm run cy:run:firefox -- --env tags="@api"
+# Run UI tests with Firefox
+npm run cy:run:firefox -- --env tags="@ui"
 
 # Run tests in parallel
 npm run test:parallel
@@ -251,4 +248,3 @@ Special thanks to:
 - Cucumber team for BDD support
 - Open source community for various plugins and utilities
 - All contributors and testers who helped shape this framework
-

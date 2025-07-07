@@ -60,4 +60,3 @@ Feature: User Login - Data Driven Testing
       | admin    | Admin123!    | 3       | dashboard    |
       | manager  | Manager123!  | 3       | dashboard    |
       | user     | User123!     | 3       | dashboard    |
-

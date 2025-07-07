@@ -32,12 +32,6 @@ Given('I am testing against {string} environment', (environment) => {
   Cypress.env('CURRENT_TEST_ENV', environment);
 });
 
-Given('the API base URL is configured', () => {
-  const apiUrl = Cypress.env('apiUrl') || 'https://api.example.com';
-  cy.task('log', `API base URL: ${apiUrl}`);
-  Cypress.env('API_BASE_URL', apiUrl);
-});
-
 // Browser and viewport steps
 Given('I am using {string} browser with {string} viewport', (browser, viewport) => {
   cy.task('log', `Testing with ${browser} browser and ${viewport} viewport`);
@@ -107,22 +101,6 @@ Then('the base URL should be {string}', (expectedUrl) => {
   cy.url().should('include', expectedUrl.replace('https://', '').replace('http://', ''));
 });
 
-Then('the API endpoints should be accessible', () => {
-  const apiUrl = Cypress.env('API_BASE_URL');
-  cy.request({
-    method: 'GET',
-    url: `${apiUrl}/health`,
-    failOnStatusCode: false
-  }).then((response) => {
-    expect(response.status).to.be.oneOf([200, 404]); // 404 is acceptable if health endpoint doesn't exist
-  });
-});
-
-Then('the database connection should be active', () => {
-  // This would typically be a health check or a simple query
-  cy.task('log', 'Verifying database connection');
-});
-
 // Generic validation steps
 Then('I should see {string}', (expectedText) => {
   cy.contains(expectedText).should('be.visible');
@@ -139,4 +117,3 @@ Then('all interactive elements should be functional', () => {
   cy.get('button, a, input').should('be.visible');
   cy.get('button:not([disabled])').should('not.be.disabled');
 });
-

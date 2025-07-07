@@ -20,7 +20,7 @@ A comprehensive End-to-End automation testing framework built with **Cypress** a
 ### 🎯 **Core Capabilities**
 - **Cypress + Cucumber Integration** - BDD-style test writing with Gherkin syntax
 - **Multi-Environment Support** - Dev, QA, UAT configurations
-- **Tag-Based Execution** - Run specific test suites (@smoke, @regression, @api, @ui)
+- **Tag-Based Execution** - Run specific test suites (@smoke, @regression, @ui)
 - **Data-Driven Testing** - JSON fixtures and dynamic data generation
 - **Page Object Model** - Maintainable and scalable test architecture
 
@@ -30,7 +30,7 @@ A comprehensive End-to-End automation testing framework built with **Cypress** a
 - **Docker Support** - Containerized test execution
 - **Parallel Execution** - Faster test runs with parallel processing
 - **Visual Testing** - Screenshot comparison and visual regression testing
-- **API Testing** - RESTful API testing capabilities
+- **UI Testing** - Comprehensive user interface testing capabilities
 
 ### 🛠 **Developer Experience**
 - **Custom Commands** - Extended Cypress functionality
@@ -106,11 +106,10 @@ config/
 ```json
 {
   "baseUrl": "https://dev.example.com",
-  "apiUrl": "https://api-dev.example.com",
   "environment": "development",
   "timeout": {
     "default": 10000,
-    "api": 5000,
+    "ui": 5000,
     "pageLoad": 30000
   },
   "credentials": {
@@ -150,7 +149,6 @@ npm run test:uat          # Run all tests in uat
 ```bash
 npm run test:smoke        # Run smoke tests
 npm run test:regression   # Run regression tests
-npm run test:api          # Run API tests
 npm run test:ui           # Run UI tests
 npm run test:critical     # Run critical tests
 ```
@@ -240,7 +238,6 @@ class LoginPage extends BasePage {
 cypress/e2e/features/
 ├── smoke/              # Critical path tests
 ├── regression/         # Full feature tests
-├── api/               # API endpoint tests
 ├── ui/                # UI component tests
 └── data-driven-examples/ # Data-driven scenarios
 ```
@@ -251,7 +248,6 @@ cypress/e2e/features/
 |-----|---------|-------------|
 | `@smoke` | Critical functionality | Every deployment |
 | `@regression` | Full feature coverage | Release testing |
-| `@api` | API endpoint testing | Backend changes |
 | `@ui` | User interface testing | Frontend changes |
 | `@critical` | Business-critical flows | High-priority testing |
 | `@data-driven` | Data-driven scenarios | Data validation |
@@ -543,4 +539,3 @@ For questions, issues, or contributions:
 ---
 
 **Happy Testing! 🎉**
-

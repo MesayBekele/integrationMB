@@ -289,7 +289,7 @@ cy.get('[data-testid="submit"], #submit, .submit-btn').first();
 **Solutions**:
 ```javascript
 // Add proper waits
-cy.intercept('GET', '/api/data').as('getData');
+cy.intercept('GET', '/data').as('getData');
 cy.wait('@getData');
 
 // Use should() for assertions
@@ -601,7 +601,7 @@ cy.intercept('**', (req) => {
 }).as('allRequests');
 
 // Wait for specific requests
-cy.intercept('GET', '/api/users').as('getUsers');
+cy.intercept('GET', '/users').as('getUsers');
 cy.wait('@getUsers').then((interception) => {
   console.log('Response:', interception.response.body);
 });
@@ -680,4 +680,3 @@ If you encounter issues not covered here:
 ---
 
 **Remember**: Most issues have solutions, and the community is here to help! 🤝
-
