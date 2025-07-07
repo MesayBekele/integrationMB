@@ -6,6 +6,8 @@ import './commands';
 import './commands/screenshot-commands'; // Base64 encoding error prevention
 import './error-handling'; // Comprehensive error handling system
 import './base64-protection'; // Ultimate Base64 protection system
+import './post-test-protection'; // Post-test cleanup protection
+import './mochawesome-protection'; // Mochawesome reporter protection
 
 // Before each test
 beforeEach(() => {

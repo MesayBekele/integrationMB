@@ -62,6 +62,14 @@ module.exports = defineConfig({
       // Load Node.js level Base64 protection first
       require('./cypress/plugins/base64-protection');
       
+      // Load post-test protection for cleanup operations
+      try {
+        require('./cypress/support/post-test-protection');
+        require('./cypress/support/mochawesome-protection');
+      } catch (e) {
+        console.warn('Post-test protection modules not available at plugin level');
+      }
+      
       // Mochawesome reporter plugin (setup first to avoid conflicts)
       require('cypress-mochawesome-reporter/plugin')(on);
       
