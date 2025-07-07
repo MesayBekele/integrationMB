@@ -1,132 +1,159 @@
-const report = require('multiple-cucumber-html-reporter');
-const fs = require('fs');
+const { merge } = require('mochawesome-merge');
+const generator = require('mochawesome-report-generator');
+const fs = require('fs-extra');
 const path = require('path');
+const glob = require('glob');
 
-// Configuration for report generation
-const reportOptions = {
-  jsonDir: 'reports/json',
-  reportPath: 'reports/html',
-  metadata: {
-    browser: {
-      name: 'chrome',
-      version: '120'
-    },
-    device: 'Local test machine',
-    platform: {
-      name: 'ubuntu',
-      version: '20.04'
-    }
-  },
-  customData: {
-    title: 'E2E Test Results',
-    data: [
-      { label: 'Project', value: 'E2E Automation Framework' },
-      { label: 'Release', value: process.env.BUILD_NUMBER || '1.0.0' },
-      { label: 'Cycle', value: process.env.ENVIRONMENT || 'dev' },
-      { label: 'Execution Start Time', value: new Date().toISOString() }
-    ]
-  }
-};
-
-// Ensure directories exist
-function ensureDirectoryExists(dirPath) {
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-}
-
-// Generate HTML report from JSON files
-function generateReport() {
+async function mergeReports() {
   try {
-    ensureDirectoryExists(reportOptions.jsonDir);
-    ensureDirectoryExists(reportOptions.reportPath);
+    console.log('🔄 Starting Mochawesome report merge process...');
     
-    // Check if JSON files exist
-    const jsonFiles = fs.readdirSync(reportOptions.jsonDir).filter(file => file.endsWith('.json'));
+    // Define paths
+    const reportsDir = 'cypress/reports/mochawesome';
+    const outputDir = 'cypress/reports';
+    const mergedReportPath = path.join(outputDir, 'merged-report.json');
+    const htmlReportPath = path.join(outputDir, 'merged-report.html');
     
-    if (jsonFiles.length === 0) {
-      console.log('No JSON report files found. Skipping report generation.');
+    // Ensure output directory exists
+    await fs.ensureDir(outputDir);
+    
+    // Check if reports directory exists
+    if (!fs.existsSync(reportsDir)) {
+      console.log('❌ No reports directory found. Skipping merge.');
       return;
     }
     
-    console.log(`Found ${jsonFiles.length} JSON report files. Generating HTML report...`);
+    // Get all JSON report files using glob pattern
+    const reportPattern = path.join(reportsDir, '**/*.json');
+    const reportFiles = glob.sync(reportPattern);
     
-    // Generate the report
-    report.generate(reportOptions);
+    if (reportFiles.length === 0) {
+      console.log('❌ No JSON report files found. Skipping merge.');
+      return;
+    }
     
-    console.log('HTML report generated successfully!');
-    console.log(`Report location: ${path.resolve(reportOptions.reportPath)}/index.html`);
+    console.log(`📊 Found ${reportFiles.length} report files to merge:`);
+    reportFiles.forEach(file => console.log(`   - ${path.relative(process.cwd(), file)}`));
+    
+    // Merge JSON reports
+    console.log('🔄 Merging JSON reports...');
+    const mergedReport = await merge({
+      files: reportFiles
+    });
+    
+    // Save merged JSON report
+    await fs.writeJson(mergedReportPath, mergedReport, { spaces: 2 });
+    console.log(`✅ Merged JSON report saved: ${mergedReportPath}`);
+    
+    // Generate HTML report from merged JSON
+    console.log('🔄 Generating HTML report...');
+    await generator.create(mergedReport, {
+      reportDir: outputDir,
+      reportFilename: 'merged-report',
+      reportTitle: 'E2E Test Results - Cypress 11 + Mochawesome',
+      reportPageTitle: 'Cypress E2E Test Results',
+      inline: true,
+      charts: true,
+      enableCharts: true,
+      code: true,
+      autoOpen: false,
+      overwrite: true,
+      timestamp: 'isoDateTime',
+      showPassed: true,
+      showFailed: true,
+      showPending: true,
+      showSkipped: true,
+      showHooks: 'failed',
+      saveJson: false,
+      saveHtml: true,
+      dev: false,
+      assetsDir: path.join(outputDir, 'assets')
+    });
+    
+    console.log(`✅ HTML report generated: ${htmlReportPath}`);
+    
+    // Clean up individual report files (optional)
+    if (process.env.CLEANUP_INDIVIDUAL_REPORTS === 'true') {
+      console.log('🧹 Cleaning up individual report files...');
+      await fs.remove(reportsDir);
+      console.log('✅ Individual report files cleaned up');
+    }
+    
+    console.log('🎉 Report merge completed successfully!');
+    
+    // Print detailed summary
+    const stats = mergedReport.stats;
+    console.log('\n📈 Test Execution Summary:');
+    console.log('═'.repeat(50));
+    console.log(`   📊 Total Tests: ${stats.tests}`);
+    console.log(`   ✅ Passed: ${stats.passes} (${((stats.passes / stats.tests) * 100).toFixed(1)}%)`);
+    console.log(`   ❌ Failed: ${stats.failures} (${((stats.failures / stats.tests) * 100).toFixed(1)}%)`);
+    console.log(`   ⏳ Pending: ${stats.pending}`);
+    console.log(`   ⏭️  Skipped: ${stats.skipped}`);
+    console.log(`   ⏱️  Duration: ${(stats.duration / 1000).toFixed(2)}s`);
+    console.log(`   📅 Start Time: ${new Date(stats.start).toLocaleString()}`);
+    console.log(`   📅 End Time: ${new Date(stats.end).toLocaleString()}`);
+    console.log('═'.repeat(50));
+    
+    // Print suite breakdown
+    if (mergedReport.results && mergedReport.results.length > 0) {
+      console.log('\n📋 Test Suite Breakdown:');
+      mergedReport.results.forEach(result => {
+        if (result.suites && result.suites.length > 0) {
+          result.suites.forEach(suite => {
+            const suiteStats = suite.stats || {};
+            console.log(`   📁 ${suite.title}: ${suiteStats.passes || 0} passed, ${suiteStats.failures || 0} failed`);
+          });
+        }
+      });
+    }
+    
+    return {
+      success: true,
+      mergedReportPath,
+      htmlReportPath,
+      stats
+    };
     
   } catch (error) {
-    console.error('Error generating report:', error);
+    console.error('❌ Error merging reports:', error);
+    console.error('Stack trace:', error.stack);
     process.exit(1);
   }
 }
 
-// Merge multiple JSON reports into one
-function mergeJsonReports() {
+// Utility function to clean old reports
+async function cleanOldReports() {
   try {
-    const jsonDir = reportOptions.jsonDir;
-    const jsonFiles = fs.readdirSync(jsonDir).filter(file => file.endsWith('.json'));
+    const reportsDir = 'cypress/reports';
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    const now = Date.now();
     
-    if (jsonFiles.length <= 1) {
-      console.log('No multiple JSON files to merge.');
-      return;
-    }
-    
-    console.log(`Merging ${jsonFiles.length} JSON report files...`);
-    
-    let mergedReport = [];
-    
-    jsonFiles.forEach(file => {
-      const filePath = path.join(jsonDir, file);
-      const reportData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (fs.existsSync(reportsDir)) {
+      const files = await fs.readdir(reportsDir);
       
-      if (Array.isArray(reportData)) {
-        mergedReport = mergedReport.concat(reportData);
-      } else {
-        mergedReport.push(reportData);
+      for (const file of files) {
+        const filePath = path.join(reportsDir, file);
+        const stats = await fs.stat(filePath);
+        
+        if (now - stats.mtime.getTime() > maxAge) {
+          await fs.remove(filePath);
+          console.log(`🗑️  Removed old report: ${file}`);
+        }
       }
-    });
-    
-    // Write merged report
-    const mergedFilePath = path.join(jsonDir, 'merged-report.json');
-    fs.writeFileSync(mergedFilePath, JSON.stringify(mergedReport, null, 2));
-    
-    console.log(`Merged report saved to: ${mergedFilePath}`);
-    
+    }
   } catch (error) {
-    console.error('Error merging JSON reports:', error);
+    console.warn('⚠️  Warning: Could not clean old reports:', error.message);
   }
 }
 
-// Main execution
+// Run if called directly
 if (require.main === module) {
-  const command = process.argv[2];
-  
-  switch (command) {
-    case 'merge':
-      mergeJsonReports();
-      break;
-    case 'generate':
-      generateReport();
-      break;
-    case 'all':
-      mergeJsonReports();
-      generateReport();
-      break;
-    default:
-      console.log('Usage: node merge-reports.js [merge|generate|all]');
-      console.log('  merge    - Merge multiple JSON reports');
-      console.log('  generate - Generate HTML report from JSON');
-      console.log('  all      - Merge and generate (default)');
-      generateReport();
-  }
+  mergeReports();
 }
 
-module.exports = {
-  generateReport,
-  mergeJsonReports,
-  reportOptions
+module.exports = { 
+  mergeReports,
+  cleanOldReports
 };
 

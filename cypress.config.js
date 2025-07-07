@@ -1,68 +1,84 @@
 const { defineConfig } = require('cypress');
+const fs = require('fs');
+const path = require('path');
 const createBundler = require('@bahmutov/cypress-esbuild-preprocessor');
 const { addCucumberPreprocessorPlugin } = require('@badeball/cypress-cucumber-preprocessor');
 const { createEsbuildPlugin } = require('@badeball/cypress-cucumber-preprocessor/esbuild');
-const fs = require('fs');
-const path = require('path');
 
-// Load environment-specific configuration
-function loadEnvironmentConfig(env = 'dev') {
-  const configPath = path.join(__dirname, 'config', `${env}.json`);
+// Load environment configuration
+function loadEnvironmentConfig(environment) {
+  const configPath = path.join(__dirname, 'config', `${environment}.json`);
+  
   if (fs.existsSync(configPath)) {
-    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    console.log(`🔧 Loading configuration for environment: ${environment}`);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    console.log(`✅ Configuration loaded successfully`);
+    return config;
+  } else {
+    console.warn(`⚠️  Configuration file not found for environment: ${environment}`);
+    console.warn(`   Expected path: ${configPath}`);
+    return {};
   }
-  console.warn(`Configuration file for environment '${env}' not found. Using default config.`);
-  return {};
 }
 
 module.exports = defineConfig({
   e2e: {
     async setupNodeEvents(on, config) {
-      // Load environment configuration
-      const env = config.env.ENVIRONMENT || process.env.CYPRESS_ENV || 'dev';
-      const envConfig = loadEnvironmentConfig(env);
+      console.log('🔧 Setting up Cypress 11 with Cucumber + Mochawesome...');
       
-      // Merge environment config with Cypress config
-      config.baseUrl = envConfig.baseUrl || config.baseUrl;
-      config.defaultCommandTimeout = envConfig.timeout?.default || 4000;
-      config.pageLoadTimeout = envConfig.timeout?.pageLoad || 60000;
-      config.requestTimeout = envConfig.timeout?.api || 5000;
-      
-      // Add environment variables
-      config.env = {
-        ...config.env,
-        ...envConfig,
-        ENVIRONMENT: env
-      };
-
-      // Set up Cucumber preprocessor
+      // Set up esbuild preprocessor with Cucumber plugin
       const bundler = createBundler({
         plugins: [createEsbuildPlugin(config)],
       });
       
       on('file:preprocessor', bundler);
       await addCucumberPreprocessorPlugin(on, config);
-
-      // Task for loading test data
+      
+      // Load environment-specific configuration
+      const environment = config.env.ENVIRONMENT || 'dev';
+      const envConfig = loadEnvironmentConfig(environment);
+      
+      // Merge environment config with Cypress config
+      if (envConfig.baseUrl) {
+        config.baseUrl = envConfig.baseUrl;
+      }
+      
+      // Set environment variables
+      config.env = {
+        ...config.env,
+        ...envConfig,
+        ENVIRONMENT: environment
+      };
+      
+      // Custom tasks
       on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+        
+        // Task for loading test data
         loadTestData(filename) {
-          const dataPath = path.join(__dirname, 'data', filename);
+          const dataPath = path.join(__dirname, 'cypress/fixtures/test-data', filename);
           if (fs.existsSync(dataPath)) {
             return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
           }
           return null;
-        },
-        
-        log(message) {
-          console.log(message);
-          return null;
         }
       });
-
+      
+      console.log(`🌍 Environment: ${environment}`);
+      console.log(`🔗 Base URL: ${config.baseUrl}`);
+      console.log('✅ Cypress + Cucumber + Mochawesome setup complete');
+      
       return config;
     },
     
-    specPattern: 'cypress/e2e/**/*.feature',
+    // Support both .feature files and .cy.js files
+    specPattern: [
+      'cypress/e2e/**/*.feature',
+      'cypress/e2e/**/*.cy.js'
+    ],
     supportFile: 'cypress/support/e2e.js',
     screenshotsFolder: 'cypress/screenshots',
     videosFolder: 'cypress/videos',
@@ -94,6 +110,12 @@ module.exports = defineConfig({
     env: {
       ENVIRONMENT: 'dev'
     }
+  },
+  
+  // Reporter configuration for Mochawesome
+  reporter: 'cypress-multi-reporters',
+  reporterOptions: {
+    configFile: 'reporter-config.json'
   }
 });
 

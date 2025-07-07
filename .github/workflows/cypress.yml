@@ -19,6 +19,18 @@ on:
         - dev
         - qa
         - uat
+      test_type:
+        description: 'Type of tests to run'
+        required: true
+        default: 'hybrid'
+        type: choice
+        options:
+        - hybrid
+        - cucumber
+        - cypress
+        - smoke
+        - regression
+        - api
       tags:
         description: 'Cucumber tags to run (e.g., @smoke, @regression)'
         required: false
@@ -49,26 +61,41 @@ jobs:
       run: |
         echo "CYPRESS_ENV=${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_ENV
         echo "CUCUMBER_TAGS=${{ github.event.inputs.tags || '@smoke' }}" >> $GITHUB_ENV
+        echo "TEST_TYPE=${{ github.event.inputs.test_type || 'hybrid' }}" >> $GITHUB_ENV
 
     - name: Create reports directory
       run: mkdir -p reports/json reports/html
 
     - name: Run Cypress tests
-      uses: cypress-io/github-action@v6
-      with:
-        install: false
-        start: npm run start:test-server
-        wait-on: 'http://localhost:3000'
-        wait-on-timeout: 120
-        browser: chrome
-        record: true
-        parallel: true
-        group: 'E2E Tests'
-        tag: ${{ github.event.inputs.environment || 'dev' }}
+      run: |
+        case "${{ github.event.inputs.test_type || 'hybrid' }}" in
+          "hybrid")
+            npm run test:hybrid
+            ;;
+          "cucumber")
+            npm run test:features
+            ;;
+          "cypress")
+            npm run test:cypress
+            ;;
+          "smoke")
+            npm run test:smoke
+            ;;
+          "regression")
+            npm run test:regression
+            ;;
+          "api")
+            npm run test:api
+            ;;
+          *)
+            npm run cy:run
+            ;;
+        esac
       env:
         CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CYPRESS_ENV: ${{ github.event.inputs.environment || 'dev' }}
+        CUCUMBER_TAGS: ${{ github.event.inputs.tags || '@smoke' }}
 
     - name: Generate test report
       if: always()
@@ -190,4 +217,3 @@ jobs:
           Commit: ${{ github.sha }}
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
