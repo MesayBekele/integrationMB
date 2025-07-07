@@ -59,6 +59,9 @@ module.exports = defineConfig({
     },
     
     async setupNodeEvents(on, config) {
+      // Load Node.js level Base64 protection first
+      require('./cypress/plugins/base64-protection');
+      
       // Mochawesome reporter plugin (setup first to avoid conflicts)
       require('cypress-mochawesome-reporter/plugin')(on);
       

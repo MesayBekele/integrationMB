@@ -5,6 +5,7 @@ import 'cypress-mochawesome-reporter/register';
 import './commands';
 import './commands/screenshot-commands'; // Base64 encoding error prevention
 import './error-handling'; // Comprehensive error handling system
+import './base64-protection'; // Ultimate Base64 protection system
 
 // Before each test
 beforeEach(() => {
