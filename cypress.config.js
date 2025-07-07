@@ -76,12 +76,12 @@ module.exports = defineConfig({
       // Cucumber preprocessor (setup after reporter)
       await addCucumberPreprocessorPlugin(on, config);
       
-      // Esbuild bundler for step definitions with source mapping fix
+      // Esbuild bundler for step definitions with source mapping
       on('file:preprocessor',
         createBundler({
           plugins: [createEsbuildPlugin(config)],
-          // Fix for source mapping issue
-          sourcemap: false,
+          // Enable source mapping for better debugging
+          sourcemap: 'inline',
           // Dynamic target based on current Node version (currently Node 22)
           target: `node${process.version.split('.')[0].substring(1)}`,
           format: 'cjs'
