@@ -1,0 +1,39 @@
+{
+  "baseUrl": "https://dev.example.com",
+  "environment": "dev",
+  "apiUrl": "https://api-dev.example.com",
+  "timeout": {
+    "default": 10000,
+    "page": 30000,
+    "request": 15000
+  },
+  "users": {
+    "admin": {
+      "username": "admin@dev.com",
+      "password": "DevPassword123!"
+    },
+    "user": {
+      "username": "user@dev.com", 
+      "password": "UserPassword123!"
+    }
+  },
+  "database": {
+    "enabled": false,
+    "host": "dev-db.example.com",
+    "port": 5432
+  },
+  "features": {
+    "newFeatureFlag": true,
+    "betaFeatures": true,
+    "debugMode": true
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "retries": {
+    "runMode": 2,
+    "openMode": 0
+  }
+}
+

@@ -1,0 +1,39 @@
+{
+  "baseUrl": "https://example.com",
+  "environment": "prod",
+  "apiUrl": "https://api.example.com",
+  "timeout": {
+    "default": 20000,
+    "page": 60000,
+    "request": 30000
+  },
+  "users": {
+    "admin": {
+      "username": "admin@example.com",
+      "password": "ProdPassword123!"
+    },
+    "user": {
+      "username": "user@example.com",
+      "password": "UserPassword123!"
+    }
+  },
+  "database": {
+    "enabled": false,
+    "host": "prod-db.example.com",
+    "port": 5432
+  },
+  "features": {
+    "newFeatureFlag": false,
+    "betaFeatures": false,
+    "debugMode": false
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "retries": {
+    "runMode": 3,
+    "openMode": 0
+  }
+}
+
