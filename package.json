@@ -1,0 +1,83 @@
+{
+  "name": "cypress-e2e-framework",
+  "version": "1.0.0",
+  "description": "Comprehensive Cypress 11 E2E testing framework with Cucumber, data-driven testing, and Mochawesome reporting",
+  "main": "index.js",
+  "scripts": {
+    "test": "cypress run",
+    "test:headed": "cypress run --headed",
+    "test:chrome": "cypress run --browser chrome",
+    "test:firefox": "cypress run --browser firefox",
+    "test:edge": "cypress run --browser edge",
+    "test:smoke": "cypress run --env tags='@smoke'",
+    "test:regression": "cypress run --env tags='@regression'",
+    "test:critical": "cypress run --env tags='@critical'",
+    "test:dev": "cypress run --env environment=dev",
+    "test:staging": "cypress run --env environment=staging",
+    "test:prod": "cypress run --env environment=prod",
+    "test:smoke:dev": "cypress run --env tags='@smoke',environment=dev",
+    "test:regression:staging": "cypress run --env tags='@regression',environment=staging",
+    "open": "cypress open",
+    "open:dev": "cypress open --env environment=dev",
+    "open:staging": "cypress open --env environment=staging",
+    "report:merge": "mochawesome-merge reports/temp/*.json > reports/merged-report.json",
+    "report:generate": "marge reports/merged-report.json --reportDir reports --inline",
+    "report:clean": "rm -rf reports/temp && mkdir -p reports/temp",
+    "test:full": "npm run report:clean && npm run test && npm run report:merge && npm run report:generate",
+    "test:parallel": "cypress run --record --parallel",
+    "lint": "eslint cypress/**/*.js",
+    "lint:fix": "eslint cypress/**/*.js --fix"
+  },
+  "keywords": [
+    "cypress",
+    "e2e",
+    "testing",
+    "cucumber",
+    "bdd",
+    "automation",
+    "ui-testing",
+    "data-driven",
+    "mochawesome"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "cypress": "^11.2.0",
+    "@badeball/cypress-cucumber-preprocessor": "^15.1.5",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
+    "cypress-mochawesome-reporter": "^3.4.0",
+    "mochawesome": "^7.1.3",
+    "mochawesome-merge": "^4.3.0",
+    "mochawesome-report-generator": "^6.2.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-cypress": "^2.15.1",
+    "prettier": "^2.8.8"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "moment": "^2.29.4",
+    "lodash": "^4.17.21"
+  },
+  "cypress-cucumber-preprocessor": {
+    "stepDefinitions": [
+      "cypress/support/step_definitions/**/*.js"
+    ],
+    "html": {
+      "enabled": true,
+      "output": "reports/cucumber-html-report.html"
+    },
+    "json": {
+      "enabled": true,
+      "output": "reports/cucumber-report.json"
+    },
+    "messages": {
+      "enabled": true,
+      "output": "reports/cucumber-messages.ndjson"
+    }
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
+

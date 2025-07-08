@@ -14,7 +14,8 @@ reports/
 mochawesome-report/
 cucumber-report/
 *.xml
-*.json
+reports/*.json
+cypress/fixtures/temp/*.json
 
 # Environment variables
 .env
@@ -75,4 +76,3 @@ build/
 # Backup files
 *.bak
 *.backup
-

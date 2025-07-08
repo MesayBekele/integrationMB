@@ -1,0 +1,87 @@
+{
+  "validUsers": [
+    {
+      "username": "admin@example.com",
+      "password": "Admin123!",
+      "role": "admin",
+      "firstName": "Admin",
+      "lastName": "User",
+      "permissions": ["read", "write", "delete", "admin"]
+    },
+    {
+      "username": "user@example.com",
+      "password": "User123!",
+      "role": "user",
+      "firstName": "Regular",
+      "lastName": "User",
+      "permissions": ["read", "write"]
+    },
+    {
+      "username": "manager@example.com",
+      "password": "Manager123!",
+      "role": "manager",
+      "firstName": "Manager",
+      "lastName": "User",
+      "permissions": ["read", "write", "manage"]
+    }
+  ],
+  "invalidUsers": [
+    {
+      "username": "invalid@example.com",
+      "password": "wrongpassword",
+      "expectedError": "Invalid credentials"
+    },
+    {
+      "username": "",
+      "password": "password123",
+      "expectedError": "Username is required"
+    },
+    {
+      "username": "user@example.com",
+      "password": "",
+      "expectedError": "Password is required"
+    },
+    {
+      "username": "notanemail",
+      "password": "password123",
+      "expectedError": "Please enter a valid email address"
+    }
+  ],
+  "testUsers": [
+    {
+      "username": "test1@example.com",
+      "password": "Test123!",
+      "role": "user",
+      "firstName": "Test",
+      "lastName": "User1"
+    },
+    {
+      "username": "test2@example.com",
+      "password": "Test123!",
+      "role": "user",
+      "firstName": "Test",
+      "lastName": "User2"
+    }
+  ],
+  "userProfiles": {
+    "admin": {
+      "displayName": "Administrator",
+      "email": "admin@example.com",
+      "department": "IT",
+      "location": "New York"
+    },
+    "user": {
+      "displayName": "Regular User",
+      "email": "user@example.com",
+      "department": "Sales",
+      "location": "California"
+    },
+    "manager": {
+      "displayName": "Manager User",
+      "email": "manager@example.com",
+      "department": "Operations",
+      "location": "Texas"
+    }
+  }
+}
+

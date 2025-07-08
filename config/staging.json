@@ -1,0 +1,39 @@
+{
+  "baseUrl": "https://staging.example.com",
+  "environment": "staging",
+  "apiUrl": "https://api-staging.example.com",
+  "timeout": {
+    "default": 15000,
+    "page": 45000,
+    "request": 20000
+  },
+  "users": {
+    "admin": {
+      "username": "admin@staging.com",
+      "password": "StagingPassword123!"
+    },
+    "user": {
+      "username": "user@staging.com",
+      "password": "UserPassword123!"
+    }
+  },
+  "database": {
+    "enabled": false,
+    "host": "staging-db.example.com",
+    "port": 5432
+  },
+  "features": {
+    "newFeatureFlag": true,
+    "betaFeatures": false,
+    "debugMode": false
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "retries": {
+    "runMode": 3,
+    "openMode": 1
+  }
+}
+
