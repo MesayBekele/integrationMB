@@ -1,134 +1,172 @@
 /**
- * Base Page Object Model Class
+ * Base Page Object Model class
  * Contains common functionality shared across all page objects
  */
 
 class BasePage {
   constructor() {
     this.timeout = 10000;
+    this.retryOptions = { timeout: this.timeout, interval: 500 };
   }
 
   /**
-   * Visit a specific URL
-   * @param {string} url - The URL to visit
+   * Navigate to a specific URL
+   * @param {string} url - URL to navigate to
+   * @param {object} options - Navigation options
    */
-  visit(url = '') {
-    cy.visit(url);
+  visit(url, options = {}) {
+    const defaultOptions = {
+      timeout: 30000,
+      failOnStatusCode: true
+    };
+    
+    cy.visit(url, { ...defaultOptions, ...options });
+    this.waitForPageLoad();
     return this;
   }
 
   /**
-   * Wait for page to load completely
+   * Wait for page to fully load
    */
   waitForPageLoad() {
-    cy.get('body').should('be.visible');
-    cy.url().should('not.include', 'loading');
+    cy.window().should('have.property', 'document');
+    cy.document().should('have.property', 'readyState', 'complete');
     return this;
+  }
+
+  /**
+   * Get element with retry logic
+   * @param {string} selector - CSS selector or data-cy attribute
+   * @param {object} options - Options for element selection
+   * @returns {Cypress.Chainable} Cypress element
+   */
+  getElement(selector, options = {}) {
+    const defaultOptions = { timeout: this.timeout };
+    return cy.get(selector, { ...defaultOptions, ...options });
   }
 
   /**
    * Get element by data-cy attribute
-   * @param {string} selector - The data-cy selector
-   * @param {number} timeout - Optional timeout
+   * @param {string} dataCy - data-cy attribute value
+   * @param {object} options - Options for element selection
+   * @returns {Cypress.Chainable} Cypress element
    */
-  getElement(selector, timeout = this.timeout) {
-    return cy.get(`[data-cy="${selector}"]`, { timeout });
+  getByDataCy(dataCy, options = {}) {
+    return this.getElement(`[data-cy="${dataCy}"]`, options);
   }
 
   /**
-   * Get element by CSS selector
-   * @param {string} selector - The CSS selector
-   * @param {number} timeout - Optional timeout
+   * Get element by text content
+   * @param {string} text - Text content to search for
+   * @param {object} options - Options for element selection
+   * @returns {Cypress.Chainable} Cypress element
    */
-  getElementBySelector(selector, timeout = this.timeout) {
-    return cy.get(selector, { timeout });
+  getByText(text, options = {}) {
+    return cy.contains(text, options);
   }
 
   /**
-   * Click an element
-   * @param {string} selector - The data-cy selector
+   * Click element with retry logic
+   * @param {string} selector - Element selector
+   * @param {object} options - Click options
    */
-  clickElement(selector) {
-    this.getElement(selector).click();
+  clickElement(selector, options = {}) {
+    const defaultOptions = { timeout: this.timeout };
+    this.getElement(selector, defaultOptions)
+      .should('be.visible')
+      .should('be.enabled')
+      .click(options);
     return this;
   }
 
   /**
-   * Type text into an element
-   * @param {string} selector - The data-cy selector
+   * Type text into input field
+   * @param {string} selector - Input field selector
    * @param {string} text - Text to type
-   * @param {boolean} clear - Whether to clear the field first
+   * @param {object} options - Type options
    */
-  typeText(selector, text, clear = true) {
-    const element = this.getElement(selector);
-    if (clear) {
-      element.clear();
+  typeText(selector, text, options = {}) {
+    const defaultOptions = { delay: 50, clear: true };
+    this.getElement(selector)
+      .should('be.visible')
+      .should('be.enabled');
+    
+    if (defaultOptions.clear) {
+      this.getElement(selector).clear();
     }
-    element.type(text);
+    
+    this.getElement(selector).type(text, { ...defaultOptions, ...options });
     return this;
   }
 
   /**
    * Select option from dropdown
-   * @param {string} selector - The data-cy selector
+   * @param {string} selector - Dropdown selector
    * @param {string} value - Value to select
    */
   selectOption(selector, value) {
-    this.getElement(selector).select(value);
+    this.getElement(selector)
+      .should('be.visible')
+      .select(value);
     return this;
   }
 
   /**
-   * Check if element is visible
-   * @param {string} selector - The data-cy selector
+   * Check checkbox or radio button
+   * @param {string} selector - Checkbox/radio selector
    */
-  isVisible(selector) {
-    return this.getElement(selector).should('be.visible');
-  }
-
-  /**
-   * Check if element contains text
-   * @param {string} selector - The data-cy selector
-   * @param {string} text - Expected text
-   */
-  shouldContainText(selector, text) {
-    this.getElement(selector).should('contain.text', text);
+  checkElement(selector) {
+    this.getElement(selector)
+      .should('be.visible')
+      .check();
     return this;
   }
 
   /**
-   * Check if element has specific value
-   * @param {string} selector - The data-cy selector
-   * @param {string} value - Expected value
+   * Uncheck checkbox
+   * @param {string} selector - Checkbox selector
    */
-  shouldHaveValue(selector, value) {
-    this.getElement(selector).should('have.value', value);
+  uncheckElement(selector) {
+    this.getElement(selector)
+      .should('be.visible')
+      .uncheck();
     return this;
   }
 
   /**
    * Wait for element to be visible
-   * @param {string} selector - The data-cy selector
-   * @param {number} timeout - Optional timeout
+   * @param {string} selector - Element selector
+   * @param {number} timeout - Timeout in milliseconds
    */
-  waitForElement(selector, timeout = this.timeout) {
-    this.getElement(selector, timeout).should('be.visible');
+  waitForVisible(selector, timeout = this.timeout) {
+    this.getElement(selector, { timeout }).should('be.visible');
     return this;
   }
 
   /**
-   * Wait for element to disappear
-   * @param {string} selector - The data-cy selector
-   * @param {number} timeout - Optional timeout
+   * Wait for element to be hidden
+   * @param {string} selector - Element selector
+   * @param {number} timeout - Timeout in milliseconds
    */
-  waitForElementToDisappear(selector, timeout = this.timeout) {
-    cy.get(`[data-cy="${selector}"]`, { timeout }).should('not.exist');
+  waitForHidden(selector, timeout = this.timeout) {
+    this.getElement(selector, { timeout }).should('not.be.visible');
     return this;
   }
 
   /**
-   * Scroll to element
-   * @param {string} selector - The data-cy selector
+   * Wait for element to contain text
+   * @param {string} selector - Element selector
+   * @param {string} text - Expected text
+   * @param {number} timeout - Timeout in milliseconds
+   */
+  waitForText(selector, text, timeout = this.timeout) {
+    this.getElement(selector, { timeout }).should('contain.text', text);
+    return this;
+  }
+
+  /**
+   * Scroll element into view
+   * @param {string} selector - Element selector
    */
   scrollToElement(selector) {
     this.getElement(selector).scrollIntoView();
@@ -136,94 +174,41 @@ class BasePage {
   }
 
   /**
-   * Take screenshot
-   * @param {string} name - Screenshot name
+   * Hover over element
+   * @param {string} selector - Element selector
    */
-  takeScreenshot(name) {
-    cy.screenshot(name || `page-${Date.now()}`);
+  hoverElement(selector) {
+    this.getElement(selector)
+      .should('be.visible')
+      .trigger('mouseover');
     return this;
   }
 
   /**
-   * Get current URL
+   * Double click element
+   * @param {string} selector - Element selector
    */
-  getCurrentUrl() {
-    return cy.url();
-  }
-
-  /**
-   * Verify current URL contains text
-   * @param {string} text - Text that should be in URL
-   */
-  urlShouldContain(text) {
-    cy.url().should('include', text);
+  doubleClickElement(selector) {
+    this.getElement(selector)
+      .should('be.visible')
+      .dblclick();
     return this;
   }
 
   /**
-   * Get page title
+   * Right click element
+   * @param {string} selector - Element selector
    */
-  getTitle() {
-    return cy.title();
-  }
-
-  /**
-   * Verify page title
-   * @param {string} title - Expected title
-   */
-  shouldHaveTitle(title) {
-    cy.title().should('eq', title);
+  rightClickElement(selector) {
+    this.getElement(selector)
+      .should('be.visible')
+      .rightclick();
     return this;
   }
 
   /**
-   * Wait for specific amount of time
-   * @param {number} ms - Milliseconds to wait
-   */
-  wait(ms) {
-    cy.wait(ms);
-    return this;
-  }
-
-  /**
-   * Reload the page
-   */
-  reload() {
-    cy.reload();
-    return this;
-  }
-
-  /**
-   * Go back in browser history
-   */
-  goBack() {
-    cy.go('back');
-    return this;
-  }
-
-  /**
-   * Go forward in browser history
-   */
-  goForward() {
-    cy.go('forward');
-    return this;
-  }
-
-  /**
-   * Handle alerts/confirmations
-   * @param {boolean} accept - Whether to accept or dismiss
-   */
-  handleAlert(accept = true) {
-    cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(accept);
-      cy.stub(win, 'alert').returns(accept);
-    });
-    return this;
-  }
-
-  /**
-   * Upload file
-   * @param {string} selector - The data-cy selector
+   * Upload file to input
+   * @param {string} selector - File input selector
    * @param {string} fileName - File name in fixtures folder
    */
   uploadFile(selector, fileName) {
@@ -232,73 +217,209 @@ class BasePage {
   }
 
   /**
-   * Clear form field
-   * @param {string} selector - The data-cy selector
+   * Take screenshot with custom name
+   * @param {string} name - Screenshot name
    */
-  clearField(selector) {
-    this.getElement(selector).clear();
+  takeScreenshot(name) {
+    cy.screenshot(name);
     return this;
   }
 
   /**
-   * Check checkbox or radio button
-   * @param {string} selector - The data-cy selector
+   * Verify element exists
+   * @param {string} selector - Element selector
    */
-  check(selector) {
-    this.getElement(selector).check();
+  verifyElementExists(selector) {
+    this.getElement(selector).should('exist');
     return this;
   }
 
   /**
-   * Uncheck checkbox
-   * @param {string} selector - The data-cy selector
+   * Verify element does not exist
+   * @param {string} selector - Element selector
    */
-  uncheck(selector) {
-    this.getElement(selector).uncheck();
+  verifyElementNotExists(selector) {
+    cy.get('body').should('not.contain', selector);
     return this;
   }
 
   /**
-   * Get text content of element
-   * @param {string} selector - The data-cy selector
+   * Verify element is visible
+   * @param {string} selector - Element selector
    */
-  getText(selector) {
-    return this.getElement(selector).invoke('text');
+  verifyElementVisible(selector) {
+    this.getElement(selector).should('be.visible');
+    return this;
   }
 
   /**
-   * Get attribute value of element
-   * @param {string} selector - The data-cy selector
+   * Verify element is hidden
+   * @param {string} selector - Element selector
+   */
+  verifyElementHidden(selector) {
+    this.getElement(selector).should('not.be.visible');
+    return this;
+  }
+
+  /**
+   * Verify element contains text
+   * @param {string} selector - Element selector
+   * @param {string} text - Expected text
+   */
+  verifyElementText(selector, text) {
+    this.getElement(selector).should('contain.text', text);
+    return this;
+  }
+
+  /**
+   * Verify element has attribute
+   * @param {string} selector - Element selector
    * @param {string} attribute - Attribute name
+   * @param {string} value - Expected attribute value
    */
-  getAttribute(selector, attribute) {
-    return this.getElement(selector).invoke('attr', attribute);
-  }
-
-  /**
-   * Double click an element
-   * @param {string} selector - The data-cy selector
-   */
-  doubleClick(selector) {
-    this.getElement(selector).dblclick();
+  verifyElementAttribute(selector, attribute, value) {
+    this.getElement(selector).should('have.attr', attribute, value);
     return this;
   }
 
   /**
-   * Right click an element
-   * @param {string} selector - The data-cy selector
+   * Verify page URL
+   * @param {string} expectedUrl - Expected URL or URL pattern
    */
-  rightClick(selector) {
-    this.getElement(selector).rightclick();
+  verifyUrl(expectedUrl) {
+    cy.url().should('include', expectedUrl);
     return this;
   }
 
   /**
-   * Hover over an element
-   * @param {string} selector - The data-cy selector
+   * Verify page title
+   * @param {string} expectedTitle - Expected page title
    */
-  hover(selector) {
-    this.getElement(selector).trigger('mouseover');
+  verifyTitle(expectedTitle) {
+    cy.title().should('include', expectedTitle);
+    return this;
+  }
+
+  /**
+   * Wait for API request to complete
+   * @param {string} alias - Request alias
+   * @param {number} timeout - Timeout in milliseconds
+   */
+  waitForApiRequest(alias, timeout = this.timeout) {
+    cy.wait(alias, { timeout });
+    return this;
+  }
+
+  /**
+   * Intercept API request
+   * @param {string} method - HTTP method
+   * @param {string} url - API endpoint URL
+   * @param {string} alias - Alias for the request
+   * @param {object} response - Mock response (optional)
+   */
+  interceptApiRequest(method, url, alias, response = null) {
+    if (response) {
+      cy.intercept(method, url, response).as(alias);
+    } else {
+      cy.intercept(method, url).as(alias);
+    }
+    return this;
+  }
+
+  /**
+   * Execute JavaScript in browser
+   * @param {string} script - JavaScript code to execute
+   */
+  executeScript(script) {
+    cy.window().then((win) => {
+      win.eval(script);
+    });
+    return this;
+  }
+
+  /**
+   * Get local storage item
+   * @param {string} key - Local storage key
+   * @returns {Cypress.Chainable} Local storage value
+   */
+  getLocalStorageItem(key) {
+    return cy.window().then((win) => {
+      return win.localStorage.getItem(key);
+    });
+  }
+
+  /**
+   * Set local storage item
+   * @param {string} key - Local storage key
+   * @param {string} value - Local storage value
+   */
+  setLocalStorageItem(key, value) {
+    cy.window().then((win) => {
+      win.localStorage.setItem(key, value);
+    });
+    return this;
+  }
+
+  /**
+   * Clear local storage
+   */
+  clearLocalStorage() {
+    cy.clearLocalStorage();
+    return this;
+  }
+
+  /**
+   * Get cookie
+   * @param {string} name - Cookie name
+   * @returns {Cypress.Chainable} Cookie value
+   */
+  getCookie(name) {
+    return cy.getCookie(name);
+  }
+
+  /**
+   * Set cookie
+   * @param {string} name - Cookie name
+   * @param {string} value - Cookie value
+   * @param {object} options - Cookie options
+   */
+  setCookie(name, value, options = {}) {
+    cy.setCookie(name, value, options);
+    return this;
+  }
+
+  /**
+   * Clear cookies
+   */
+  clearCookies() {
+    cy.clearCookies();
+    return this;
+  }
+
+  /**
+   * Reload page
+   */
+  reloadPage() {
+    cy.reload();
+    this.waitForPageLoad();
+    return this;
+  }
+
+  /**
+   * Go back in browser history
+   */
+  goBack() {
+    cy.go('back');
+    this.waitForPageLoad();
+    return this;
+  }
+
+  /**
+   * Go forward in browser history
+   */
+  goForward() {
+    cy.go('forward');
+    this.waitForPageLoad();
     return this;
   }
 }
