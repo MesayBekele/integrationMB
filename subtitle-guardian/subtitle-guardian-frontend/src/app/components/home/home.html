@@ -1,0 +1,269 @@
+<div class="home-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo">
+        <h1>🎬 Subtitle Guardian</h1>
+        <p class="tagline">Safe movie watching for families</p>
+      </div>
+      
+      <div class="user-info" *ngIf="currentUser$ | async as user; else loginButton">
+        <div class="user-details">
+          <span class="user-name">{{user.firstName}} {{user.lastName}}</span>
+          <div class="subscription-info">
+            <span class="plan-badge" [class]="user.subscription.plan">
+              {{user.subscription.plan | titlecase}}
+            </span>
+            <span class="usage" *ngIf="user.subscription.plan === 'free'">
+              {{user.subscription.searchesUsed}}/{{user.subscription.searchLimit}} searches used
+            </span>
+          </div>
+        </div>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
+      
+      <ng-template #loginButton>
+        <div class="auth-buttons">
+          <button class="login-btn" (click)="showLogin = true">Login</button>
+          <button class="signup-btn" (click)="showSignup = true">Sign Up</button>
+        </div>
+      </ng-template>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h2>Screen Movies Before Your Kids Watch</h2>
+        <p class="hero-description">
+          Get AI-powered content analysis of movies and TV shows. 
+          Check for violence, inappropriate language, mature themes, and more.
+          Plus get discussion guides to talk with your kids after watching.
+        </p>
+        
+        <div class="search-section">
+          <div class="search-container">
+            <input 
+              type="text" 
+              class="search-input"
+              placeholder="Search for a movie or TV show..."
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="searchMovies()"
+            >
+            <button class="search-btn" (click)="searchMovies()" [disabled]="!searchQuery.trim()">
+              <span class="search-icon">🔍</span>
+              Search
+            </button>
+          </div>
+          
+          <div class="quick-topics">
+            <span class="topics-label">Popular topics to check:</span>
+            <div class="topic-chips">
+              <span class="topic-chip">Violence</span>
+              <span class="topic-chip">Sexual Content</span>
+              <span class="topic-chip">Profanity</span>
+              <span class="topic-chip">Religion</span>
+              <span class="topic-chip">LGBTQ+ Themes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <div class="features-content">
+        <h3>How Subtitle Guardian Works</h3>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h4>1. Search & Select</h4>
+            <p>Find your movie and choose what topics to screen for</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h4>2. AI Analysis</h4>
+            <p>Our AI analyzes subtitles for inappropriate content</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h4>3. Get Results</h4>
+            <p>Receive detailed ratings and flagged content examples</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h4>4. Discussion Guide</h4>
+            <p>Get 1000-word summaries to discuss themes with your kids</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" *ngIf="!(currentUser$ | async)">
+      <div class="pricing-content">
+        <h3>Simple, Family-Friendly Pricing</h3>
+        <div class="pricing-cards">
+          <div class="pricing-card free">
+            <h4>Free</h4>
+            <div class="price">$0<span>/month</span></div>
+            <ul class="features-list">
+              <li>✅ 5 movie analyses per month</li>
+              <li>✅ Basic content screening</li>
+              <li>✅ Age recommendations</li>
+              <li>❌ Discussion summaries</li>
+              <li>❌ Priority processing</li>
+            </ul>
+            <button class="pricing-btn" (click)="showSignup = true">Get Started Free</button>
+          </div>
+          
+          <div class="pricing-card premium">
+            <div class="popular-badge">Most Popular</div>
+            <h4>Premium</h4>
+            <div class="price">$4.99<span>/month</span></div>
+            <ul class="features-list">
+              <li>✅ Unlimited movie analyses</li>
+              <li>✅ Advanced AI content screening</li>
+              <li>✅ Detailed age recommendations</li>
+              <li>✅ 1000-word discussion summaries</li>
+              <li>✅ Priority processing</li>
+              <li>✅ Custom keyword filtering</li>
+            </ul>
+            <button class="pricing-btn premium" (click)="showSignup = true">Start Premium Trial</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" *ngIf="showLogin" (click)="showLogin = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Welcome Back</h3>
+        <button class="close-btn" (click)="showLogin = false">×</button>
+      </div>
+      <form class="auth-form" (ngSubmit)="login()" #loginForm="ngForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            [(ngModel)]="loginData.email" 
+            required 
+            #email="ngModel"
+          >
+          <div class="error" *ngIf="email.invalid && email.touched">
+            Please enter a valid email
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            [(ngModel)]="loginData.password" 
+            required 
+            #password="ngModel"
+          >
+          <div class="error" *ngIf="password.invalid && password.touched">
+            Password is required
+          </div>
+        </div>
+        
+        <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLoading">
+          {{isLoading ? 'Signing In...' : 'Sign In'}}
+        </button>
+        
+        <div class="auth-switch">
+          Don't have an account? 
+          <a href="#" (click)="showLogin = false; showSignup = true; $event.preventDefault()">Sign up</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div class="modal-overlay" *ngIf="showSignup" (click)="showSignup = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Your Account</h3>
+        <button class="close-btn" (click)="showSignup = false">×</button>
+      </div>
+      <form class="auth-form" (ngSubmit)="signup()" #signupForm="ngForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input 
+              type="text" 
+              id="firstName" 
+              name="firstName"
+              [(ngModel)]="signupData.firstName" 
+              required 
+              #firstName="ngModel"
+            >
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input 
+              type="text" 
+              id="lastName" 
+              name="lastName"
+              [(ngModel)]="signupData.lastName" 
+              required 
+              #lastName="ngModel"
+            >
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input 
+            type="email" 
+            id="signupEmail" 
+            name="signupEmail"
+            [(ngModel)]="signupData.email" 
+            required 
+            #signupEmail="ngModel"
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input 
+            type="password" 
+            id="signupPassword" 
+            name="signupPassword"
+            [(ngModel)]="signupData.password" 
+            required 
+            minlength="6"
+            #signupPassword="ngModel"
+          >
+          <div class="error" *ngIf="signupPassword.invalid && signupPassword.touched">
+            Password must be at least 6 characters
+          </div>
+        </div>
+        
+        <button type="submit" class="submit-btn" [disabled]="signupForm.invalid || isLoading">
+          {{isLoading ? 'Creating Account...' : 'Create Account'}}
+        </button>
+        
+        <div class="auth-switch">
+          Already have an account? 
+          <a href="#" (click)="showSignup = false; showLogin = true; $event.preventDefault()">Sign in</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+  </div>
+</div>
+

@@ -1,0 +1,127 @@
+<div class="search-container">
+  <header class="search-header">
+    <button class="back-btn" (click)="goBack()">
+      ← Back to Home
+    </button>
+    <h1>🎬 Movie Search</h1>
+  </header>
+
+  <div class="search-section">
+    <div class="search-input-container">
+      <input 
+        type="text" 
+        class="search-input"
+        placeholder="Search for movies or TV shows..."
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchMovies()"
+        #searchInput
+      >
+      <button class="search-btn" (click)="searchMovies()" [disabled]="!searchQuery.trim() || isLoading">
+        <span class="search-icon" *ngIf="!isLoading">🔍</span>
+        <div class="loading-spinner" *ngIf="isLoading"></div>
+        {{isLoading ? 'Searching...' : 'Search'}}
+      </button>
+    </div>
+
+    <div class="search-filters" *ngIf="searchResults.length > 0">
+      <label class="filter-label">
+        <input type="checkbox" [(ngModel)]="filters.moviesOnly"> Movies only
+      </label>
+      <label class="filter-label">
+        <input type="checkbox" [(ngModel)]="filters.tvOnly"> TV shows only
+      </label>
+      <select class="year-filter" [(ngModel)]="filters.year">
+        <option value="">Any year</option>
+        <option *ngFor="let year of yearOptions" [value]="year">{{year}}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="search-results" *ngIf="searchResults.length > 0">
+    <h2>Search Results ({{filteredResults.length}})</h2>
+    
+    <div class="results-grid">
+      <div 
+        class="movie-card" 
+        *ngFor="let movie of filteredResults"
+        (click)="selectMovie(movie)"
+      >
+        <div class="movie-poster">
+          <img 
+            [src]="movie.posterUrl || '/assets/no-poster.png'" 
+            [alt]="movie.title + ' poster'"
+            (error)="onImageError($event)"
+          >
+          <div class="movie-type-badge" [class]="movie.type">
+            {{movie.type === 'movie' ? '🎬' : '📺'}} {{movie.type | titlecase}}
+          </div>
+        </div>
+        
+        <div class="movie-info">
+          <h3 class="movie-title">{{movie.title}}</h3>
+          <p class="movie-year">{{movie.year}}</p>
+          <p class="movie-plot">{{movie.plot | slice:0:120}}{{movie.plot.length > 120 ? '...' : ''}}</p>
+          
+          <div class="movie-status">
+            <span class="subtitles-status" [class.available]="movie.hasSubtitles">
+              {{movie.hasSubtitles ? '✅ Subtitles Available' : '❌ No Subtitles'}}
+            </span>
+            <span class="analysis-status" *ngIf="movie.lastAnalyzed">
+              🔍 Previously analyzed
+            </span>
+          </div>
+          
+          <button 
+            class="select-btn" 
+            [disabled]="!movie.hasSubtitles"
+            [class.premium-required]="!canAnalyze && movie.hasSubtitles"
+          >
+            {{getSelectButtonText(movie)}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="no-results" *ngIf="filteredResults.length === 0 && searchResults.length > 0">
+      <p>No movies match your current filters. Try adjusting your search criteria.</p>
+    </div>
+  </div>
+
+  <div class="no-results" *ngIf="searchPerformed && searchResults.length === 0 && !isLoading">
+    <div class="no-results-content">
+      <div class="no-results-icon">🔍</div>
+      <h3>No Results Found</h3>
+      <p>We couldn't find any movies or TV shows matching "{{lastSearchQuery}}".</p>
+      <div class="search-tips">
+        <h4>Try these tips:</h4>
+        <ul>
+          <li>Check your spelling</li>
+          <li>Try different keywords</li>
+          <li>Search for the original title if it's a foreign film</li>
+          <li>Include the year if you know it</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="usage-warning" *ngIf="currentUser && !canAnalyze">
+    <div class="warning-content">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-text">
+        <h4>Search Limit Reached</h4>
+        <p>You've used {{currentUser.subscription.searchesUsed}} of {{currentUser.subscription.searchLimit}} free searches this month.</p>
+        <button class="upgrade-btn" (click)="goToSubscription()">
+          Upgrade to Premium - $4.99/month
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="loading-spinner large"></div>
+      <p>Searching for movies and TV shows...</p>
+    </div>
+  </div>
+</div>
+
